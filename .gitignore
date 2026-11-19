@@ -1,0 +1,30 @@
+# Unreal / development-generated files
+**/Binaries/
+**/Intermediate/
+**/Saved/
+**/DerivedDataCache/
+**/.vs/
+**/node_modules/
+**/__pycache__/
+**/venv/
+**/.venv/
+*.sln
+*.suo
+*.VC.db
+*.VC.opendb
+*.pyc
+*.log
+~$*
+# Local publishing work and presentation-build intermediates
+/.github-upload/
+/.upload-tools/
+/.panel_build/
+**/.DS_Store
+**/Thumbs.db
+# Machine credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx

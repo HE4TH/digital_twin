@@ -1,0 +1,280 @@
+{
+  "meshes": [
+    {
+      "name": "SM_Iris",
+      "file": "SM_Iris.fbx",
+      "materials": [
+        "Iris_glass_phare",
+        "Iris_main_hull",
+        "Iris_secondary_hull",
+        "Iris_Hull_tertiary",
+        "Iris_gouverne",
+        "Iris_helice",
+        "Iris_hublot_glass",
+        "Iris_hublot_iron",
+        "Iris_phare"
+      ],
+      "dimensions_m": [
+        4.800000190734863,
+        1.5668479204177856,
+        1.6500906944274902
+      ]
+    },
+    {
+      "name": "SM_Lanza",
+      "file": "SM_Lanza.fbx",
+      "materials": [
+        "Lanza_Mat_2",
+        "Lanza_Glass"
+      ],
+      "dimensions_m": [
+        3.799999952316284,
+        4.272103786468506,
+        4.115716457366943
+      ]
+    },
+    {
+      "name": "SM_Seaweed_0",
+      "file": "SM_Seaweed_0.fbx",
+      "materials": [
+        "Weed_Seaweed"
+      ],
+      "dimensions_m": [
+        1.4392638206481934,
+        1.037784457206726,
+        1.8000000715255737
+      ]
+    },
+    {
+      "name": "SM_Seaweed_1",
+      "file": "SM_Seaweed_1.fbx",
+      "materials": [
+        "Weed_Seaweed"
+      ],
+      "dimensions_m": [
+        1.3206098079681396,
+        1.0480694770812988,
+        1.7999999523162842
+      ]
+    },
+    {
+      "name": "SM_Seaweed_2",
+      "file": "SM_Seaweed_2.fbx",
+      "materials": [
+        "Weed_Seaweed"
+      ],
+      "dimensions_m": [
+        1.635396122932434,
+        1.4789669513702393,
+        1.7999999523162842
+      ]
+    }
+  ],
+  "materials": {
+    "Iris_glass_phare": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_0.png",
+        "normal": "Iris_Image_3.png",
+        "roughness": "Iris_Image_1.png",
+        "metallic": "Iris_Image_1.png",
+        "alpha": "Iris_Image_0.png"
+      }
+    },
+    "Iris_gouverne": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_16.png",
+        "normal": "Iris_Image_19.png",
+        "roughness": "Iris_Image_17.png",
+        "metallic": "Iris_Image_17.png",
+        "alpha": "Iris_Image_16.png"
+      }
+    },
+    "Iris_helice": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_20.png",
+        "normal": "Iris_Image_23.png",
+        "roughness": "Iris_Image_21.png",
+        "metallic": "Iris_Image_21.png",
+        "alpha": "Iris_Image_20.png"
+      }
+    },
+    "Iris_hublot_glass": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_24.png",
+        "normal": "Iris_Image_27.png",
+        "roughness": "Iris_Image_25.png",
+        "metallic": "Iris_Image_25.png",
+        "alpha": "Iris_Image_24.png"
+      }
+    },
+    "Iris_hublot_iron": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_28.png",
+        "normal": "Iris_Image_31.png",
+        "roughness": "Iris_Image_29.png",
+        "metallic": "Iris_Image_29.png",
+        "alpha": "Iris_Image_28.png"
+      }
+    },
+    "Iris_Hull_tertiary": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_12.png",
+        "normal": "Iris_Image_15.png",
+        "roughness": "Iris_Image_13.png",
+        "metallic": "Iris_Image_13.png",
+        "alpha": "Iris_Image_12.png"
+      }
+    },
+    "Iris_main_hull": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_4.png",
+        "normal": "Iris_Image_7.png",
+        "roughness": "Iris_Image_5.png",
+        "metallic": "Iris_Image_5.png",
+        "alpha": "Iris_Image_4.png"
+      }
+    },
+    "Iris_phare": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_32.png",
+        "normal": "Iris_Image_35.png",
+        "roughness": "Iris_Image_33.png",
+        "metallic": "Iris_Image_33.png",
+        "alpha": "Iris_Image_32.png"
+      }
+    },
+    "Iris_secondary_hull": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Iris_Image_8.png",
+        "normal": "Iris_Image_11.png",
+        "roughness": "Iris_Image_9.png",
+        "metallic": "Iris_Image_9.png"
+      }
+    },
+    "Lanza_Glass": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.0961216390132904,
+      "metallic": 1.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Lanza_Image_4.png",
+        "alpha": "Lanza_Image_4.png"
+      }
+    },
+    "Lanza_Mat_2": {
+      "base": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {
+        "base": "Lanza_Image_0.png",
+        "normal": "Lanza_Image_3.png",
+        "roughness": "Lanza_Image_1.png",
+        "metallic": "Lanza_Image_1.png"
+      }
+    },
+    "Weed_Seaweed": {
+      "base": [
+        0.010933400131762028,
+        0.114935003221035,
+        0.011958500370383263,
+        1.0
+      ],
+      "roughness": 0.5,
+      "metallic": 0.0,
+      "alpha": 1.0,
+      "textures": {}
+    }
+  }
+}

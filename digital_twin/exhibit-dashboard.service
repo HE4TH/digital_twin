@@ -1,0 +1,14 @@
+[Unit]
+Description=Exhibit test dashboard (Flask, plain HTTP)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Exhibit
+ExecStart=/home/pi/Digital_Twin/venv/bin/python /home/pi/Exhibit/dashboard_server.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

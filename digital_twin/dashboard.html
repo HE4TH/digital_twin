@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rescue Relay Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
+<style>
+  :root {
+    --bg: #0e1417;
+    --surface: #151d21;
+    --surface-2: #1c262b;
+    --line: #2a3439;
+    --ink: #e7eef1;
+    --muted: #8ba0a8;
+    --accent: #ff6a3d;
+    --accent-ink: #2a0f06;
+    --good: #35c48a;
+    --warn: #ffb020;
+    --critical: #ff5252;
+    --focus: #7fd4ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, "Malgun Gothic", sans-serif;
+    padding: 28px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; }
+  header h1 { font-size: 1.35rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  header .kicker { font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+  .pi-ip {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 12px; white-space: nowrap;
+  }
+  .pi-ip strong { color: var(--ink); font-weight: 600; }
+
+  .connbar {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .connbar label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+  .connbar input[type="text"] {
+    background: var(--surface-2); border: 1px solid var(--line); color: var(--ink);
+    border-radius: 8px; padding: 9px 11px; font-family: "IBM Plex Mono", monospace; font-size: 0.92rem; width: 190px;
+  }
+  .btn {
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+    border-radius: 8px; padding: 9px 16px; font-size: 0.88rem; font-weight: 500; cursor: pointer; font-family: inherit;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .status-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--critical); flex: none; }
+  .dot.on { background: var(--good); }
+  .dot.connecting { background: var(--warn); }
+
+  .pipeline { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 18px 16px; }
+  .pipeline-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .pipeline-head h2 { font-size: 0.95rem; font-weight: 600; margin: 0; }
+  .pipeline-head .hint { font-size: 0.76rem; color: var(--muted); }
+  .stages { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .stage {
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 10px;
+    text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center;
+    transition: border-color .25s, background .25s;
+  }
+  .stage .num { font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.05em; }
+  .stage .label { font-size: 0.82rem; font-weight: 600; line-height: 1.25; }
+  .stage .topic { font-family: "IBM Plex Mono", monospace; font-size: 0.66rem; color: var(--muted); }
+  .stage.active { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, var(--surface-2)); }
+  .stage.active .num { color: var(--warn); }
+  .stage.done { border-color: var(--good); }
+  .stage.done .num { color: var(--good); }
+
+  .grid { display: grid; grid-template-columns: 300px 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .panel h2 { font-size: 0.88rem; font-weight: 600; margin: 0 0 12px; }
+  .panel-sub { font-size: 0.74rem; color: var(--muted); margin: -8px 0 12px; }
+
+  .trigger-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .trigger-row .btn { width: 100%; text-align: left; display: flex; align-items: center; gap: 9px; }
+  .trigger-row .btn .sw { font-size: 0.68rem; color: var(--muted); margin-left: auto; font-family: "IBM Plex Mono", monospace; }
+  .btn-fall { border-color: color-mix(in srgb, var(--critical) 50%, var(--line)); }
+  .btn-fall:hover { border-color: var(--critical); }
+  .btn-arrive { border-color: color-mix(in srgb, var(--good) 50%, var(--line)); }
+  .btn-arrive:hover { border-color: var(--good); }
+
+  .dpad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 56px); gap: 6px; justify-content: center; margin: 4px 0; }
+  .dpad button {
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; color: var(--ink);
+    font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; touch-action: none;
+  }
+  .dpad button:active, .dpad button.active { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .dpad button.empty { visibility: hidden; }
+  .dpad button.stop-key { color: var(--critical); font-weight: 700; }
+  .dpad button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .log-panel { display: flex; flex-direction: column; height: 100%; }
+  .log-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .legend { display: flex; gap: 12px; margin-left: auto; flex-wrap: wrap; }
+  .legend span { font-size: 0.7rem; color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .log-list {
+    flex: 1; min-height: 320px; max-height: 460px; overflow-y: auto;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2);
+    display: flex; flex-direction: column-reverse;
+  }
+  .log-empty { padding: 40px 16px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+  .log-row { display: grid; grid-template-columns: 66px 15px 130px 1fr; gap: 10px; align-items: baseline; padding: 7px 12px; border-bottom: 1px solid var(--line); font-size: 0.79rem; }
+  .log-row:first-child { border-bottom: none; }
+  .log-row .t { font-family: "IBM Plex Mono", monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .log-row .bar { width: 4px; height: 16px; border-radius: 2px; align-self: center; }
+  .log-row .topic { font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+  .log-row .payload { font-family: "IBM Plex Mono", monospace; color: var(--muted); overflow-wrap: anywhere; }
+  .bar-alert { background: var(--critical); }
+  .bar-mode { background: var(--warn); }
+  .bar-control { background: var(--accent); }
+  .bar-telemetry { background: var(--good); }
+  .bar-sys { background: var(--muted); }
+
+  footer { font-size: 0.72rem; color: var(--muted); text-align: center; padding-top: 4px; }
+  footer code { font-family: "IBM Plex Mono", monospace; }
+
+  .alert-banner {
+    display: none; align-items: center; gap: 10px;
+    background: color-mix(in srgb, var(--critical) 16%, var(--surface));
+    border: 1px solid var(--critical);
+    border-radius: 12px; padding: 13px 16px;
+  }
+  .alert-banner.show { display: flex; }
+  .alert-banner .badge {
+    font-family: "IBM Plex Mono", monospace; font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.05em; padding: 3px 9px; border-radius: 999px;
+    background: var(--critical); color: #1a0505; flex: none;
+  }
+  .alert-banner .msg { font-size: 0.9rem; font-weight: 600; }
+  .alert-banner.state-arrived { border-color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--surface)); }
+  .alert-banner.state-arrived .badge { background: var(--good); color: #062015; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker">전시회 프로젝트 · 통합 테스트</div>
+      <h1>Rescue Relay Console</h1>
+    </div>
+    <div class="pi-ip">Pi4 IP: <strong id="piIp">확인 중…</strong></div>
+  </header>
+
+  <div class="connbar">
+    <label for="ip">브로커 IP</label>
+    <input id="ip" type="text" placeholder="예: 10.245.228.100" autocomplete="off" spellcheck="false">
+    <button class="btn btn-primary" id="connectBtn">연결</button>
+    <div class="status-pill"><span class="dot" id="dot"></span><span id="statusText">IP를 입력하고 연결하세요</span></div>
+  </div>
+
+  <div class="alert-banner" id="alertBanner">
+    <span class="badge" id="alertBadge">위험</span>
+    <span class="msg" id="alertMsg">위험 신호 발생 — 지금부터 방향키 조작이 가능합니다</span>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipeline-head">
+      <h2>5단계 시나리오 진행 상태</h2>
+      <span class="hint">home_sim.py + car_subscriber.py 실시간 반영</span>
+    </div>
+    <div class="stages" id="stages">
+      <div class="stage" data-stage="1"><span class="num">01</span><span class="label">위험 신호 발생</span><span class="topic">home/alert</span></div>
+      <div class="stage" data-stage="2"><span class="num">02</span><span class="label">방문객 폰 알림</span><span class="topic">→ 조작 잠금 해제</span></div>
+      <div class="stage" data-stage="3"><span class="num">03</span><span class="label">가상+실물 동시 조작</span><span class="topic">car/control</span></div>
+      <div class="stage" data-stage="4"><span class="num">04</span><span class="label">고령자 집 도착</span><span class="topic">car/mode: arrived</span></div>
+      <div class="stage" data-stage="5"><span class="num">05</span><span class="label">자율주행 복귀</span><span class="topic">car/mode: autonomous</span></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="panel" id="controls">
+      <h2>테스트 트리거</h2>
+      <p class="panel-sub">스크립트에 SSH로 접속하지 않고, MQTT test/trigger/* 토픽으로 원격 트리거합니다.</p>
+      <div class="trigger-row">
+        <button class="btn btn-fall" id="btnFall" disabled>낙상 이벤트 발생<span class="sw">test/trigger/fall</span></button>
+        <button class="btn btn-arrive" id="btnArrive" disabled>목적지 도착 트리거<span class="sw">test/trigger/arrival</span></button>
+        <button class="btn btn-arrive" id="btnHome" disabled>복귀 완료 트리거 (언리얼 대역)<span class="sw">test/trigger/home</span></button>
+      </div>
+      <h2 style="margin-top:4px;">방문객 조작 (car/control)</h2>
+      <div class="dpad">
+        <button class="empty"></button><button data-dir="forward" disabled>▲</button><button class="empty"></button>
+        <button data-dir="left" disabled>◀</button><button class="stop-key" data-dir="stop" disabled>■</button><button data-dir="right" disabled>▶</button>
+        <button class="empty"></button><button data-dir="backward" disabled>▼</button><button class="empty"></button>
+      </div>
+      <p class="panel-sub" style="margin-bottom:0;">누르고 있는 동안 steering/throttle 발행, 떼면 stop</p>
+    </div>
+
+    <div class="panel log-panel">
+      <div class="log-toolbar">
+        <h2 style="margin:0;">MQTT 실시간 로그</h2>
+        <div class="legend">
+          <span><i class="bar-alert"></i>home/alert</span>
+          <span><i class="bar-mode"></i>car/mode</span>
+          <span><i class="bar-control"></i>car/control</span>
+          <span><i class="bar-telemetry"></i>car/telemetry</span>
+        </div>
+      </div>
+      <div class="log-list" id="logList">
+        <div class="log-empty">연결하면 home/# · car/# 토픽 메시지가 여기 실시간으로 쌓입니다</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>브로커 WebSocket 포트 <code>9001</code>(<code>ws://</code>, 평문)로 접속합니다. 이 페이지 자체가 Pi4에서 HTTP로 서빙되므로 인증서가 필요 없습니다.</footer>
+</div>
+
+<script>
+(function () {
+  var ipInput = document.getElementById('ip');
+  var connectBtn = document.getElementById('connectBtn');
+  var dot = document.getElementById('dot');
+  var statusText = document.getElementById('statusText');
+  var logList = document.getElementById('logList');
+  var stagesEl = document.getElementById('stages');
+  var btnFall = document.getElementById('btnFall');
+  var btnArrive = document.getElementById('btnArrive');
+  var btnHome = document.getElementById('btnHome');
+  var dpadButtons = document.querySelectorAll('.dpad button[data-dir]');
+  var alertBanner = document.getElementById('alertBanner');
+  var alertBadge = document.getElementById('alertBadge');
+  var alertMsg = document.getElementById('alertMsg');
+
+  var client = null;
+  var startTime = null;
+  var stageMax = 0;
+
+  // 이 페이지 자체가 Pi4에서 서빙되므로, 기본값은 현재 접속한 호스트로 채운다.
+  ipInput.value = window.location.hostname || '';
+  try {
+    var savedIp = localStorage.getItem('exhibit_pi_ip');
+    if (savedIp && !window.location.hostname) ipInput.value = savedIp;
+  } catch (e) {}
+
+  var piIpEl = document.getElementById('piIp');
+  fetch('/ip').then(function (r) { return r.json(); }).then(function (d) {
+    piIpEl.textContent = d.ip + (d.hostname ? ' (' + d.hostname + '.local)' : '');
+  }).catch(function () { piIpEl.textContent = '확인 불가'; });
+
+  function setTriggersEnabled(enabled) {
+    btnFall.disabled = !enabled;
+    btnArrive.disabled = !enabled;
+    btnHome.disabled = !enabled;
+  }
+
+  function setDpadEnabled(enabled) {
+    dpadButtons.forEach(function (b) { b.disabled = !enabled; });
+  }
+
+  function showAlert(state, badge, msg) {
+    alertBanner.classList.add('show');
+    alertBanner.classList.toggle('state-arrived', state === 'arrived');
+    alertBadge.textContent = badge;
+    alertMsg.textContent = msg;
+  }
+
+  function hideAlert() {
+    alertBanner.classList.remove('show', 'state-arrived');
+  }
+
+  function setStatus(state, text) {
+    dot.className = 'dot' + (state ? ' ' + state : '');
+    statusText.textContent = text;
+  }
+
+  function resetPipeline() {
+    stageMax = 0;
+    Array.prototype.forEach.call(stagesEl.children, function (el) { el.classList.remove('active', 'done'); });
+  }
+
+  function setStage(n) {
+    if (n < stageMax) return;
+    stageMax = n;
+    Array.prototype.forEach.call(stagesEl.children, function (el) {
+      var s = parseInt(el.dataset.stage, 10);
+      el.classList.toggle('done', s < n);
+      el.classList.toggle('active', s === n);
+    });
+  }
+
+  function barClass(topic) {
+    if (topic === 'home/alert') return 'bar-alert';
+    if (topic === 'car/mode') return 'bar-mode';
+    if (topic === 'car/control') return 'bar-control';
+    if (topic === 'car/telemetry') return 'bar-telemetry';
+    return 'bar-sys';
+  }
+
+  function addLog(topic, payloadText) {
+    var empty = logList.querySelector('.log-empty');
+    if (empty) empty.remove();
+    var row = document.createElement('div');
+    row.className = 'log-row';
+    var t = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+    row.innerHTML = '<span class="t">' + t + '</span><span class="bar ' + barClass(topic) + '"></span><span class="topic">' + topic + '</span><span class="payload"></span>';
+    row.lastElementChild.textContent = payloadText;
+    logList.insertBefore(row, logList.firstChild);
+    var rows = logList.querySelectorAll('.log-row');
+    if (rows.length > 200) rows[rows.length - 1].remove();
+  }
+
+  function handleMessage(topic, payloadText) {
+    addLog(topic, payloadText);
+    var data = {};
+    try { data = JSON.parse(payloadText); } catch (e) {}
+    if (topic === 'home/alert') {
+      resetPipeline();
+      setStage(2);
+      showAlert('fall', '위험', '위험 신호 발생 — 지금부터 방향키 조작이 가능합니다');
+      setDpadEnabled(true);
+    } else if (topic === 'car/control') {
+      setStage(3);
+    } else if (topic === 'car/mode' && data.mode === 'arrived') {
+      setStage(4);
+      showAlert('arrived', '도착', '고령자 집 도착 — 조작이 종료되고 자율주행으로 복귀합니다');
+      setDpadEnabled(false);
+    } else if (topic === 'car/mode' && data.mode === 'autonomous') {
+      setStage(5);
+    } else if (topic === 'car/telemetry' && data.mode === 'manual' && stageMax === 5) {
+      resetPipeline();
+      hideAlert();
+      setDpadEnabled(false);
+    }
+  }
+
+  function connect() {
+    var ip = ipInput.value.trim();
+    if (!ip) { ipInput.focus(); return; }
+    try { localStorage.setItem('exhibit_pi_ip', ip); } catch (e) {}
+    if (client) { try { client.end(true); } catch (e) {} }
+
+    setStatus('connecting', ip + ':9001 연결 중…');
+    setTriggersEnabled(false);
+    setDpadEnabled(false);
+    hideAlert();
+    startTime = Date.now();
+
+    client = mqtt.connect('ws://' + ip + ':9001', { connectTimeout: 6000, reconnectPeriod: 3000 });
+
+    client.on('connect', function () {
+      setStatus('on', ip + ':9001 연결됨');
+      setTriggersEnabled(true);
+      client.subscribe(['home/#', 'car/#']);
+    });
+    client.on('reconnect', function () { setStatus('connecting', '재연결 중…'); setTriggersEnabled(false); setDpadEnabled(false); });
+    client.on('close', function () { setStatus('', '연결 끊김'); setTriggersEnabled(false); setDpadEnabled(false); });
+    client.on('error', function (err) { setStatus('', '연결 오류: ' + (err && err.message ? err.message : err)); setTriggersEnabled(false); setDpadEnabled(false); });
+    client.on('message', function (topic, msg) { handleMessage(topic, msg.toString()); });
+  }
+
+  connectBtn.addEventListener('click', connect);
+  ipInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') connect(); });
+
+  btnFall.addEventListener('click', function () { if (client) client.publish('test/trigger/fall', '{}'); });
+  btnArrive.addEventListener('click', function () { if (client) client.publish('test/trigger/arrival', '{}'); });
+  btnHome.addEventListener('click', function () { if (client) client.publish('test/trigger/home', '{}'); });
+
+  var lastDir = null;
+  function publishControl(dir) {
+    if (!client || dir === lastDir) return;
+    lastDir = dir;
+    var payload = { forward: [0, 1], backward: [0, -1], left: [-1, 0], right: [1, 0], stop: [0, 0] }[dir];
+    client.publish('car/control', JSON.stringify({ steering: payload[0], throttle: payload[1] }));
+  }
+  dpadButtons.forEach(function (btn) {
+    var dir = btn.dataset.dir;
+    var start = function (e) { e.preventDefault(); if (btn.disabled) return; btn.classList.add('active'); publishControl(dir); };
+    var end = function (e) { e.preventDefault(); if (btn.disabled) return; btn.classList.remove('active'); if (dir !== 'stop') publishControl('stop'); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointerleave', end);
+    btn.addEventListener('pointercancel', end);
+  });
+})();
+</script>
+</body>
+</html>

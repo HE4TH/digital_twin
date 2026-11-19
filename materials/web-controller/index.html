@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>MQTT Vehicle Controller</title>
+<!-- 로컬 정적 서버에는 favicon 이 없어 404 가 뜨므로 인라인으로 박아둔다 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%234c8dff'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --line: #262d38;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --ok: #3fb950;
+    --warn: #d29922;
+    --bad: #f85149;
+    --accent: #4c8dff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    padding: 16px;
+    max-width: 720px; margin: 0 auto;
+    overscroll-behavior: none;
+  }
+  h1 { font-size: 17px; margin: 0 0 14px; font-weight: 650; letter-spacing: -0.01em; }
+  h1 span { color: var(--muted); font-weight: 400; font-size: 13px; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 14px; margin-bottom: 12px;
+  }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  input[type=text] {
+    flex: 1 1 240px; min-width: 200px;
+    background: #0d1117; color: var(--text);
+    border: 1px solid var(--line); border-radius: 7px;
+    padding: 9px 11px; font-size: 14px; font-family: ui-monospace, Consolas, monospace;
+  }
+  button.action {
+    background: var(--accent); color: #fff; border: 0;
+    border-radius: 7px; padding: 9px 16px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  button.action.secondary { background: #30363d; }
+
+  .status { display: flex; align-items: center; gap: 7px; font-size: 13.5px; margin-top: 11px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--bad); flex: none; }
+  .dot.ok { background: var(--ok); }
+  .dot.warn { background: var(--warn); }
+
+  .kv { font-size: 12.5px; color: var(--muted); margin-top: 7px; font-family: ui-monospace, Consolas, monospace; }
+
+  .label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 9px; }
+
+  /* WASD 십자 배치 */
+  .pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas: ". w ." "a s d";
+    gap: 10px;
+    touch-action: none;
+  }
+  .pad button {
+    font-size: 26px; font-weight: 700;
+    background: #21262d; color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px;
+    height: 84px;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+    transition: background 60ms linear, border-color 60ms linear;
+  }
+  .pad button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pad button[data-key=w] { grid-area: w; }
+  .pad button[data-key=a] { grid-area: a; }
+  .pad button[data-key=s] { grid-area: s; }
+  .pad button[data-key=d] { grid-area: d; }
+
+  .chips { display: flex; gap: 8px; }
+  .chip {
+    flex: 1; text-align: center; padding: 9px 0;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #0d1117; color: var(--muted);
+    font-weight: 700; font-size: 15px;
+  }
+  .chip.on { background: var(--ok); border-color: var(--ok); color: #06240d; }
+  .chip.stale { opacity: 0.4; }
+
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+  .err { color: var(--bad); font-size: 13px; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+
+<h1>MQTT Vehicle Controller <span>· testvi</span></h1>
+
+<div class="panel">
+  <div class="label">브로커 연결</div>
+  <div class="row">
+    <input type="text" id="url" spellcheck="false" autocapitalize="off" autocomplete="off" />
+    <button class="action" id="btnConnect">연결</button>
+    <button class="action secondary" id="btnDisconnect">해제</button>
+  </div>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">연결 안 됨</span></div>
+  <div class="kv" id="pubInfo">마지막 송신: —</div>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="panel">
+  <div class="label">입력 · 키보드 WASD 또는 아래 버튼(멀티터치 지원)</div>
+  <div class="pad" id="pad">
+    <button data-key="w">W</button>
+    <button data-key="a">A</button>
+    <button data-key="s">S</button>
+    <button data-key="d">D</button>
+  </div>
+  <div class="hint">
+    W 전진 · S 후진(전진 중이면 제동) · A/D 조향.
+    창을 벗어나거나 손을 떼면 즉시 전체 해제 상태를 발행합니다.
+  </div>
+</div>
+
+<div class="panel">
+  <div class="label">Unreal Play 창의 입력 (testvi/unreal/input)</div>
+  <div class="chips" id="unrealChips">
+    <div class="chip" data-key="w">W</div>
+    <div class="chip" data-key="a">A</div>
+    <div class="chip" data-key="s">S</div>
+    <div class="chip" data-key="d">D</div>
+  </div>
+  <div class="kv" id="unrealInfo">수신 없음</div>
+  <div class="hint">
+    Unreal 은 Play 창에 포커스가 있을 때만 키 상태를 보냅니다.
+    이 브라우저를 클릭하면 Unreal 쪽 표시가 꺼지는 게 정상입니다.
+  </div>
+</div>
+
+<!-- 로컬 npm 의존성. CDN 을 쓰지 않는다. 없으면 web-controller 에서 npm install 실행. -->
+<script src="./node_modules/mqtt/dist/mqtt.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---- 고정 규약 — 변경 금지 -------------------------------------------
+  var TOPIC_WEB    = "testvi/web/input";
+  var TOPIC_UNREAL = "testvi/unreal/input";
+  var PUBLISH_INTERVAL_MS = 100;   // 0.1초
+  // ---------------------------------------------------------------------
+
+  var UNREAL_STALE_MS = 600;       // 이 시간 넘게 Unreal 소식 없으면 흐리게 표시
+
+  var el = function (id) { return document.getElementById(id); };
+  var urlInput   = el("url");
+  var dot        = el("dot");
+  var statusText = el("statusText");
+  var pubInfo    = el("pubInfo");
+  var unrealInfo = el("unrealInfo");
+  var errBox     = el("err");
+
+  var keys = { w: false, a: false, s: false, d: false };
+  var client = null;
+  var timer = null;
+  var lastPublishAt = 0;
+  var publishCount = 0;
+  var lastUnrealAt = 0;
+  var unrealKeys = { w: false, a: false, s: false, d: false };
+
+  urlInput.value = "ws://" + (location.hostname || "127.0.0.1") + ":9001";
+
+  if (typeof mqtt === "undefined") {
+    errBox.style.display = "block";
+    errBox.textContent =
+      "mqtt 라이브러리를 찾지 못했습니다. web-controller 폴더에서 npm install 을 먼저 실행하세요.";
+  }
+
+  function stopPayload() {
+    return JSON.stringify({ source: "web", keys: { w: false, a: false, s: false, d: false } });
+  }
+
+  function payload() {
+    return JSON.stringify({
+      source: "web",
+      keys: { w: keys.w, a: keys.a, s: keys.s, d: keys.d }
+    });
+  }
+
+  function setStatus(cls, text) {
+    dot.className = "dot" + (cls ? " " + cls : "");
+    statusText.textContent = text;
+  }
+
+  // ---- 발행 ------------------------------------------------------------
+
+  function publish(force) {
+    if (!client || !client.connected) { return; }
+    // QoS 0, retain false. 0.1초마다 갱신되는 제어 스트림이라 재전송/보존이 무의미하다.
+    client.publish(TOPIC_WEB, payload(), { qos: 0, retain: false });
+    lastPublishAt = Date.now();
+    publishCount += 1;
+    if (force) { renderPublishInfo(); }
+  }
+
+  function renderPublishInfo() {
+    if (!lastPublishAt) { pubInfo.textContent = "마지막 송신: —"; return; }
+    var d = new Date(lastPublishAt);
+    var hh = String(d.getHours()).padStart(2, "0");
+    var mm = String(d.getMinutes()).padStart(2, "0");
+    var ss = String(d.getSeconds()).padStart(2, "0");
+    var ms = String(d.getMilliseconds()).padStart(3, "0");
+    var active = Object.keys(keys).filter(function (k) { return keys[k]; })
+                       .join("+").toUpperCase() || "STOP";
+    pubInfo.textContent =
+      "마지막 송신: " + hh + ":" + mm + ":" + ss + "." + ms +
+      "  ·  " + active + "  ·  누적 " + publishCount + "건";
+  }
+
+  // 하트비트: 키 상태가 안 변해도 계속 보내야 한다.
+  // Unreal 쪽 0.35초 타임아웃이 이 주기 발행을 전제로 동작한다.
+  function startLoop() {
+    if (timer) { return; }
+    timer = setInterval(function () {
+      publish(false);
+      renderPublishInfo();
+      renderUnreal();
+    }, PUBLISH_INTERVAL_MS);
+  }
+
+  function stopLoop() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  // ---- 입력 상태 -------------------------------------------------------
+
+  function setKey(k, down) {
+    if (!(k in keys) || keys[k] === down) { return; }
+    keys[k] = down;
+    renderPad();
+    publish(true);   // 변화 시 즉시 반영 (하트비트를 기다리지 않는다)
+  }
+
+  function releaseAll() {
+    var changed = false;
+    Object.keys(keys).forEach(function (k) {
+      if (keys[k]) { keys[k] = false; changed = true; }
+    });
+    activePointers.clear();
+    renderPad();
+    if (changed && client && client.connected) {
+      client.publish(TOPIC_WEB, stopPayload(), { qos: 0, retain: false });
+      lastPublishAt = Date.now();
+      publishCount += 1;
+      renderPublishInfo();
+    }
+  }
+
+  function renderPad() {
+    var btns = document.querySelectorAll("#pad button");
+    for (var i = 0; i < btns.length; i++) {
+      var k = btns[i].getAttribute("data-key");
+      btns[i].classList.toggle("on", !!keys[k]);
+    }
+  }
+
+  function renderUnreal() {
+    var stale = !lastUnrealAt || (Date.now() - lastUnrealAt > UNREAL_STALE_MS);
+    var chips = document.querySelectorAll("#unrealChips .chip");
+    for (var i = 0; i < chips.length; i++) {
+      var k = chips[i].getAttribute("data-key");
+      chips[i].classList.toggle("on", !stale && !!unrealKeys[k]);
+      chips[i].classList.toggle("stale", stale);
+    }
+    unrealInfo.textContent = lastUnrealAt
+      ? (stale ? "수신 대기 중 (Play 창 포커스 확인)" : "수신 중")
+      : "수신 없음";
+  }
+
+  // ---- 키보드 ----------------------------------------------------------
+
+  var CODE_MAP = { KeyW: "w", KeyA: "a", KeyS: "s", KeyD: "d" };
+
+  window.addEventListener("keydown", function (e) {
+    if (e.repeat) { return; }
+    if (e.target === urlInput) { return; }
+    var k = CODE_MAP[e.code];
+    if (k) { e.preventDefault(); setKey(k, true); }
+  });
+
+  window.addEventListener("keyup", function (e) {
+    var k = CODE_MAP[e.code];
+    if (k) { e.preventDefault(); setKey(k, false); }
+  });
+
+  // ---- 포인터(멀티터치) ------------------------------------------------
+
+  var activePointers = new Map();   // pointerId -> key
+
+  document.querySelectorAll("#pad button").forEach(function (btn) {
+    var k = btn.getAttribute("data-key");
+
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+      activePointers.set(e.pointerId, k);
+      setKey(k, true);
+    });
+
+    var up = function (e) {
+      e.preventDefault();
+      var mapped = activePointers.get(e.pointerId);
+      if (mapped) {
+        activePointers.delete(e.pointerId);
+        // 같은 키를 누르고 있는 다른 손가락이 없을 때만 해제한다.
+        var stillHeld = false;
+        activePointers.forEach(function (v) { if (v === mapped) { stillHeld = true; } });
+        if (!stillHeld) { setKey(mapped, false); }
+      }
+    };
+
+    btn.addEventListener("pointerup", up);
+    btn.addEventListener("pointercancel", up);
+    btn.addEventListener("lostpointercapture", up);
+    btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  });
+
+  // ---- 안전장치 --------------------------------------------------------
+
+  window.addEventListener("blur", releaseAll);
+  window.addEventListener("pointercancel", releaseAll);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) { releaseAll(); }
+  });
+  window.addEventListener("pagehide", releaseAll);
+
+  // ---- 연결 ------------------------------------------------------------
+
+  function connect() {
+    if (typeof mqtt === "undefined") { return; }
+    disconnect();
+
+    var url = urlInput.value.trim();
+    if (!url) { return; }
+
+    setStatus("warn", "연결 중… " + url);
+    errBox.style.display = "none";
+
+    // clientId 는 매번 달라야 한다. 고정하면 탭을 두 개 열었을 때
+    // 브로커가 서로를 끊어내며 재연결 루프에 빠진다.
+    var clientId = "web-" + Math.random().toString(16).slice(2, 10);
+
+    client = mqtt.connect(url, {
+      clientId: clientId,
+      clean: true,
+      keepalive: 15,
+      reconnectPeriod: 2000,
+      connectTimeout: 5000,
+      // 보조 안전장치. 브라우저가 비정상 종료되면 브로커가 대신 정지 신호를 보낸다.
+      // 다만 브라우저가 WebSocket 을 정상 close 하면 will 이 안 뜨는 경우도 있으므로
+      // 정지 보장은 Unreal 쪽 0.35초 페일세이프가 담당한다. 여기는 어디까지나 덤이다.
+      will: { topic: TOPIC_WEB, payload: stopPayload(), qos: 0, retain: false }
+    });
+
+    client.on("connect", function () {
+      setStatus("ok", "MQTT 연결됨 · " + clientId);
+      // 재연결 후에도 반드시 다시 구독한다.
+      client.subscribe(TOPIC_UNREAL, { qos: 0 });
+      startLoop();
+    });
+
+    client.on("reconnect", function () { setStatus("warn", "재연결 시도 중…"); });
+    client.on("close",     function () { setStatus("", "연결 끊김"); });
+    client.on("offline",   function () { setStatus("", "오프라인"); });
+
+    client.on("error", function (e) {
+      setStatus("", "연결 오류");
+      errBox.style.display = "block";
+      errBox.textContent = "오류: " + (e && e.message ? e.message : String(e));
+    });
+
+    client.on("message", function (topic, message) {
+      if (topic !== TOPIC_UNREAL) { return; }
+      try {
+        var data = JSON.parse(message.toString());
+        if (data && data.keys) {
+          unrealKeys = {
+            w: !!data.keys.w, a: !!data.keys.a,
+            s: !!data.keys.s, d: !!data.keys.d
+          };
+          lastUnrealAt = Date.now();
+          renderUnreal();
+        }
+      } catch (_) { /* 잘못된 payload 는 무시 */ }
+    });
+  }
+
+  function disconnect() {
+    stopLoop();
+    if (client) {
+      try { client.publish(TOPIC_WEB, stopPayload(), { qos: 0, retain: false }); } catch (_) {}
+      try { client.end(true); } catch (_) {}
+      client = null;
+    }
+    setStatus("", "연결 안 됨");
+  }
+
+  el("btnConnect").addEventListener("click", connect);
+  el("btnDisconnect").addEventListener("click", function () { releaseAll(); disconnect(); });
+
+  renderPad();
+  renderUnreal();
+  renderPublishInfo();
+})();
+</script>
+</body>
+</html>

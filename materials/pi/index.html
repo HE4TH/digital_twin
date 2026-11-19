@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Rover Controller</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%234c8dff'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg:#0e1116; --panel:#161b22; --line:#262d38; --text:#e6edf3;
+    --muted:#8b949e; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --accent:#4c8dff;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif; -webkit-text-size-adjust:100%; }
+  body { padding:16px; max-width:720px; margin:0 auto; overscroll-behavior:none; }
+  h1 { font-size:17px; margin:0 0 14px; font-weight:650; letter-spacing:-0.01em; }
+  h1 span { color:var(--muted); font-weight:400; font-size:13px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  input[type=text] { flex:1 1 240px; min-width:200px; background:#0d1117; color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:9px 11px; font-size:14px;
+    font-family:ui-monospace,Consolas,monospace; }
+  button.action { background:var(--accent); color:#fff; border:0; border-radius:7px;
+    padding:9px 16px; font-size:14px; font-weight:600; cursor:pointer; }
+  button.action.secondary { background:#30363d; }
+  .status { display:flex; align-items:center; gap:7px; font-size:13.5px; margin-top:11px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--bad); flex:none; }
+  .dot.ok { background:var(--ok); } .dot.warn { background:var(--warn); }
+  .kv { font-size:12.5px; color:var(--muted); margin-top:7px; font-family:ui-monospace,Consolas,monospace; }
+  .label { font-size:11.5px; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); margin-bottom:9px; }
+  .pad { display:grid; grid-template-columns:repeat(3,1fr);
+    grid-template-areas:". w ." "a s d"; gap:10px; touch-action:none; }
+  .pad button { font-size:26px; font-weight:700; background:#21262d; color:var(--text);
+    border:1px solid var(--line); border-radius:12px; height:84px; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+    cursor:pointer; transition:background 60ms linear, border-color 60ms linear; }
+  .pad button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .pad button[data-key=w]{grid-area:w;} .pad button[data-key=a]{grid-area:a;}
+  .pad button[data-key=s]{grid-area:s;} .pad button[data-key=d]{grid-area:d;}
+  .wheels { display:flex; gap:10px; }
+  .wheel { flex:1; background:#0d1117; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .wheel .n { font-size:11px; color:var(--muted); letter-spacing:0.06em; }
+  .wheel .v { font-size:22px; font-weight:700; font-family:ui-monospace,Consolas,monospace; margin-top:2px; }
+  .bar { height:6px; background:#21262d; border-radius:3px; margin-top:8px; position:relative; overflow:hidden; }
+  .bar i { position:absolute; top:0; bottom:0; left:50%; background:var(--accent); width:0; }
+  .bar i.rev { background:var(--warn); }
+  .hint { font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
+  .err { color:var(--bad); font-size:13px; margin-top:10px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>Rover Controller <span>· veh/cmd</span></h1>
+
+<div class="panel">
+  <div class="label">브로커 연결</div>
+  <div class="row">
+    <input type="text" id="url" spellcheck="false" autocapitalize="off" autocomplete="off" />
+    <button class="action" id="btnConnect">연결</button>
+    <button class="action secondary" id="btnDisconnect">해제</button>
+  </div>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">연결 안 됨</span></div>
+  <div class="kv" id="pubInfo">마지막 송신: —</div>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="panel">
+  <div class="label">입력 · 키보드 WASD 또는 아래 버튼(멀티터치)</div>
+  <div class="pad" id="pad">
+    <button data-key="w">W</button>
+    <button data-key="a">A</button>
+    <button data-key="s">S</button>
+    <button data-key="d">D</button>
+  </div>
+  <div class="kv" id="cmdInfo">th=+0.00  st=+0.00</div>
+  <div class="hint">
+    W+A 처럼 동시에 누르면 전진하면서 곡선으로 돕니다.
+    창을 벗어나거나 손을 떼면 즉시 정지 명령을 보냅니다.
+  </div>
+</div>
+
+<div class="panel">
+  <div class="label">로버 실제 상태 (veh/state)</div>
+  <div class="wheels">
+    <div class="wheel">
+      <div class="n">LEFT</div><div class="v" id="lv">+0.00</div>
+      <div class="bar"><i id="lb"></i></div>
+    </div>
+    <div class="wheel">
+      <div class="n">RIGHT</div><div class="v" id="rv">+0.00</div>
+      <div class="bar"><i id="rb"></i></div>
+    </div>
+  </div>
+  <div class="kv" id="stateInfo">수신 없음</div>
+  <div class="hint">
+    로버가 실제로 바퀴에 넣은 값입니다. 명령을 멈추면 0.3초 안에 스스로 0으로 떨어집니다.
+  </div>
+</div>
+
+<script src="./mqtt.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---- 통신 규약 ----------------------------------------------------
+  var TOPIC_CMD   = "veh/cmd";     // {"th":-1..1,"st":-1..1}
+  var TOPIC_STATE = "veh/state";   // {"l":..,"r":..,"live":bool}
+  var SEND_MS     = 100;           // 하트비트 주기. 로버의 0.3초 워치독이 이걸 전제로 한다.
+  // -------------------------------------------------------------------
+
+  var STATE_STALE_MS = 700;
+
+  var el = function (id) { return document.getElementById(id); };
+  var urlInput = el("url"), dot = el("dot"), statusText = el("statusText");
+  var pubInfo = el("pubInfo"), cmdInfo = el("cmdInfo");
+  var stateInfo = el("stateInfo"), errBox = el("err");
+
+  var keys = { w:false, a:false, s:false, d:false };
+  var client = null, timer = null;
+  var lastPublishAt = 0, publishCount = 0, lastStateAt = 0;
+
+  // 페이지를 Pi 에서 받아왔으면 브로커도 같은 Pi 다.
+  urlInput.value = "ws://" + (location.hostname || "127.0.0.1") + ":9001";
+
+  if (typeof mqtt === "undefined") {
+    errBox.style.display = "block";
+    errBox.textContent = "mqtt.min.js 를 찾지 못했습니다. index.html 과 같은 폴더에 있어야 합니다.";
+  }
+
+  // W/A/S/D -> th/st 변환. 이 한 곳에서만 변환하고, 이후로는 아무도 번역하지 않는다.
+  function cmd() {
+    return {
+      th: (keys.w ? 1 : 0) - (keys.s ? 1 : 0),
+      st: (keys.d ? 1 : 0) - (keys.a ? 1 : 0)
+    };
+  }
+
+  function setStatus(cls, text) {
+    dot.className = "dot" + (cls ? " " + cls : "");
+    statusText.textContent = text;
+  }
+
+  function publish() {
+    if (!client || !client.connected) { return; }
+    var c = cmd();
+    client.publish(TOPIC_CMD, JSON.stringify(c), { qos: 0, retain: false });
+    lastPublishAt = Date.now();
+    publishCount += 1;
+    cmdInfo.textContent = "th=" + c.th.toFixed(2) + "  st=" + c.st.toFixed(2);
+  }
+
+  function renderPubInfo() {
+    if (!lastPublishAt) { pubInfo.textContent = "마지막 송신: —"; return; }
+    var d = new Date(lastPublishAt), p = function (n, w) { return String(n).padStart(w, "0"); };
+    pubInfo.textContent = "마지막 송신: " + p(d.getHours(),2) + ":" + p(d.getMinutes(),2) + ":" +
+      p(d.getSeconds(),2) + "." + p(d.getMilliseconds(),3) + "  ·  누적 " + publishCount + "건";
+  }
+
+  function startLoop() {
+    if (timer) { return; }
+    timer = setInterval(function () { publish(); renderPubInfo(); renderState(); }, SEND_MS);
+  }
+  function stopLoop() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function setKey(k, down) {
+    if (!(k in keys) || keys[k] === down) { return; }
+    keys[k] = down;
+    renderPad();
+    publish();
+  }
+
+  function releaseAll() {
+    var changed = false;
+    Object.keys(keys).forEach(function (k) { if (keys[k]) { keys[k] = false; changed = true; } });
+    activePointers.clear();
+    renderPad();
+    if (changed) { publish(); }
+  }
+
+  function renderPad() {
+    document.querySelectorAll("#pad button").forEach(function (b) {
+      b.classList.toggle("on", !!keys[b.getAttribute("data-key")]);
+    });
+  }
+
+  function setBar(barEl, v) {
+    var pct = Math.min(1, Math.abs(v)) * 50;
+    barEl.classList.toggle("rev", v < 0);
+    barEl.style.width = pct + "%";
+    barEl.style.left = v >= 0 ? "50%" : (50 - pct) + "%";
+  }
+
+  function renderState(data) {
+    if (data) {
+      lastStateAt = Date.now();
+      el("lv").textContent = (data.l >= 0 ? "+" : "") + Number(data.l).toFixed(2);
+      el("rv").textContent = (data.r >= 0 ? "+" : "") + Number(data.r).toFixed(2);
+      setBar(el("lb"), data.l);
+      setBar(el("rb"), data.r);
+    }
+    if (!lastStateAt) { stateInfo.textContent = "수신 없음"; return; }
+    var stale = Date.now() - lastStateAt > STATE_STALE_MS;
+    stateInfo.textContent = stale ? "로버 응답 없음 (rover_drive.py 실행 중인가요?)" : "수신 중";
+  }
+
+  // ---- 키보드 --------------------------------------------------------
+  var CODE = { KeyW:"w", KeyA:"a", KeyS:"s", KeyD:"d",
+               ArrowUp:"w", ArrowLeft:"a", ArrowDown:"s", ArrowRight:"d" };
+
+  window.addEventListener("keydown", function (e) {
+    if (e.repeat || e.target === urlInput) { return; }
+    var k = CODE[e.code];
+    if (k) { e.preventDefault(); setKey(k, true); }
+  });
+  window.addEventListener("keyup", function (e) {
+    var k = CODE[e.code];
+    if (k) { e.preventDefault(); setKey(k, false); }
+  });
+
+  // ---- 포인터(멀티터치) ----------------------------------------------
+  var activePointers = new Map();
+
+  document.querySelectorAll("#pad button").forEach(function (btn) {
+    var k = btn.getAttribute("data-key");
+    btn.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+      activePointers.set(e.pointerId, k);
+      setKey(k, true);
+    });
+    var up = function (e) {
+      e.preventDefault();
+      var mapped = activePointers.get(e.pointerId);
+      if (!mapped) { return; }
+      activePointers.delete(e.pointerId);
+      var held = false;
+      activePointers.forEach(function (v) { if (v === mapped) { held = true; } });
+      if (!held) { setKey(mapped, false); }
+    };
+    btn.addEventListener("pointerup", up);
+    btn.addEventListener("pointercancel", up);
+    btn.addEventListener("lostpointercapture", up);
+    btn.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  });
+
+  window.addEventListener("blur", releaseAll);
+  window.addEventListener("pagehide", releaseAll);
+  document.addEventListener("visibilitychange", function () { if (document.hidden) { releaseAll(); } });
+
+  // ---- 연결 ----------------------------------------------------------
+  function connect() {
+    if (typeof mqtt === "undefined") { return; }
+    disconnect();
+    var url = urlInput.value.trim();
+    if (!url) { return; }
+
+    setStatus("warn", "연결 중… " + url);
+    errBox.style.display = "none";
+
+    // clientId 는 매번 달라야 한다. 고정하면 여러 명이 접속했을 때 서로를 끊어낸다.
+    var clientId = "web-" + Math.random().toString(16).slice(2, 10);
+
+    client = mqtt.connect(url, {
+      clientId: clientId, clean: true, keepalive: 15,
+      reconnectPeriod: 2000, connectTimeout: 5000,
+      will: { topic: TOPIC_CMD, payload: JSON.stringify({ th:0, st:0 }), qos:0, retain:false }
+    });
+
+    client.on("connect", function () {
+      setStatus("ok", "MQTT 연결됨 · " + clientId);
+      client.subscribe(TOPIC_STATE, { qos: 0 });   // 재연결 후에도 다시 구독된다
+      startLoop();
+    });
+    client.on("reconnect", function () { setStatus("warn", "재연결 시도 중…"); });
+    client.on("close",     function () { setStatus("", "연결 끊김"); });
+    client.on("offline",   function () { setStatus("", "오프라인"); });
+    client.on("error", function (e) {
+      setStatus("", "연결 오류");
+      errBox.style.display = "block";
+      errBox.textContent = "오류: " + (e && e.message ? e.message : String(e));
+    });
+    client.on("message", function (topic, message) {
+      if (topic !== TOPIC_STATE) { return; }
+      try { renderState(JSON.parse(message.toString())); } catch (_) {}
+    });
+  }
+
+  function disconnect() {
+    stopLoop();
+    if (client) {
+      try { client.publish(TOPIC_CMD, JSON.stringify({ th:0, st:0 }), { qos:0, retain:false }); } catch (_) {}
+      try { client.end(true); } catch (_) {}
+      client = null;
+    }
+    setStatus("", "연결 안 됨");
+  }
+
+  el("btnConnect").addEventListener("click", connect);
+  el("btnDisconnect").addEventListener("click", function () { releaseAll(); disconnect(); });
+
+  renderPad(); renderState(); renderPubInfo();
+})();
+</script>
+</body>
+</html>

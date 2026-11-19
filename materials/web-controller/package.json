@@ -1,0 +1,12 @@
+{
+  "name": "mqtt-vehicle-web-controller",
+  "version": "1.0.0",
+  "private": true,
+  "description": "W/A/S/D web + mobile controller for the Unreal MQTT vehicle bridge (Windows)",
+  "scripts": {
+    "start": "py -m http.server 5173"
+  },
+  "dependencies": {
+    "mqtt": "^5.10.1"
+  }
+}

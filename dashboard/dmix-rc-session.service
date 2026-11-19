@@ -1,0 +1,12 @@
+[Unit]
+Description=D-Mix RC MQTT receiver (dashboard start only)
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -u /home/pi/rover_drive.py --motors --broker localhost --command-topic codex/ue-bench/20261019/cmd --state-topic codex/ue-bench/20261019/state --max-speed 0.2
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=5
+
+# No Install section: only starts when the dashboard requests it.

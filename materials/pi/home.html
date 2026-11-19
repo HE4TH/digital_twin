@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Smart Home 관제</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%233fb950'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg:#0e1116; --panel:#161b22; --line:#262d38; --text:#e6edf3;
+    --muted:#8b949e; --ok:#3fb950; --warn:#d29922; --bad:#f85149; --accent:#4c8dff;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"Segoe UI",Roboto,"Malgun Gothic",sans-serif; }
+  body { padding:16px; max-width:760px; margin:0 auto; }
+  h1 { font-size:17px; margin:0 0 14px; font-weight:650; letter-spacing:-0.01em; }
+  h1 span { color:var(--muted); font-weight:400; font-size:13px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:14px; margin-bottom:12px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  input[type=text] { flex:1 1 220px; min-width:180px; background:#0d1117; color:var(--text);
+    border:1px solid var(--line); border-radius:7px; padding:9px 11px; font-size:14px;
+    font-family:ui-monospace,Consolas,monospace; }
+  button.action { background:var(--accent); color:#fff; border:0; border-radius:7px;
+    padding:9px 16px; font-size:14px; font-weight:600; cursor:pointer; }
+  button.action.secondary { background:#30363d; }
+  button.trig { flex:1; border:0; border-radius:9px; padding:14px 10px;
+    font-size:15px; font-weight:700; cursor:pointer; color:#fff; }
+  button.trig.fall { background:var(--bad); }
+  button.trig.nomo { background:var(--warn); color:#221a00; }
+  button.trig.clear { background:var(--ok); color:#06240d; }
+  .status { display:flex; align-items:center; gap:7px; font-size:13.5px; margin-top:11px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--bad); flex:none; }
+  .dot.ok { background:var(--ok); } .dot.warn { background:var(--warn); }
+  .label { font-size:11.5px; text-transform:uppercase; letter-spacing:0.07em;
+    color:var(--muted); margin-bottom:9px; }
+  .kv { font-size:12.5px; color:var(--muted); margin-top:8px;
+    font-family:ui-monospace,Consolas,monospace; }
+
+  /* 상태 대형 표시 */
+  .state { border-radius:12px; padding:22px 18px; text-align:center; border:2px solid var(--line);
+    background:#0d1117; transition:background 150ms linear, border-color 150ms linear; }
+  .state .name { font-size:30px; font-weight:800; letter-spacing:-0.02em; }
+  .state .sub  { font-size:13px; color:var(--muted); margin-top:6px; }
+  .state.lv0 { border-color:var(--ok); }
+  .state.lv0 .name { color:var(--ok); }
+  .state.lv1 { border-color:var(--warn); background:#241d05; }
+  .state.lv1 .name { color:var(--warn); }
+  .state.lv2 { border-color:var(--bad); background:#2b0f0f; animation:pulse 1s ease-in-out infinite; }
+  .state.lv2 .name { color:var(--bad); }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.62; } }
+
+  .metrics { display:flex; gap:10px; margin-top:12px; }
+  .metric { flex:1; background:#0d1117; border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .metric .n { font-size:11px; color:var(--muted); letter-spacing:0.06em; }
+  .metric .v { font-size:21px; font-weight:700; font-family:ui-monospace,Consolas,monospace; margin-top:2px; }
+
+  /* 앰뷸런스 상태 */
+  .amb { border-radius:10px; padding:16px 18px; text-align:center; border:2px solid var(--line);
+    background:#0d1117; transition:background 150ms linear, border-color 150ms linear; }
+  .amb .mode { font-size:23px; font-weight:800; letter-spacing:-0.02em; }
+  .amb .sub  { font-size:12.5px; color:var(--muted); margin-top:5px; }
+  .amb.m-idle .mode      { color:var(--muted); }
+  .amb.m-standby         { border-color:var(--warn); background:#241d05; }
+  .amb.m-standby .mode   { color:var(--warn); }
+  .amb.m-dispatched      { border-color:var(--bad); background:#2b0f0f; animation:pulse 1s ease-in-out infinite; }
+  .amb.m-dispatched .mode{ color:var(--bad); }
+  .amb.m-arrived         { border-color:var(--warn); background:#241d05; }
+  .amb.m-arrived .mode   { color:var(--warn); }
+  .amb.m-returning       { border-color:var(--accent); }
+  .amb.m-returning .mode { color:var(--accent); }
+  .amb.m-manual          { border-color:var(--ok); }
+  .amb.m-manual .mode    { color:var(--ok); }
+
+  /* 출동 승인 */
+  .panel.dispatch { transition:border-color 150ms linear, background 150ms linear; }
+  .panel.dispatch.armed { border-color:var(--bad); background:#1c1113; }
+  .ask { text-align:center; font-size:16px; font-weight:700; padding:6px 0 12px; color:var(--muted); }
+  .panel.dispatch.armed .ask { color:var(--bad); }
+  button.go { flex:2; border:0; border-radius:9px; padding:16px 10px;
+    font-size:16px; font-weight:800; cursor:pointer; color:#fff; background:#30363d; }
+  .panel.dispatch.armed button.go { background:var(--bad); animation:pulse 1s ease-in-out infinite; }
+  button.back { flex:1; border:0; border-radius:9px; padding:16px 10px;
+    font-size:15px; font-weight:700; cursor:pointer; color:#fff; background:#30363d; }
+  button:disabled { opacity:0.45; cursor:not-allowed; animation:none !important; }
+
+  .log { background:#0d1117; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+    font-family:ui-monospace,Consolas,monospace; font-size:12.5px; line-height:1.75;
+    max-height:190px; overflow-y:auto; }
+  .log .t { color:var(--muted); }
+  .log .fall { color:var(--bad); font-weight:700; }
+  .log .no_motion { color:var(--warn); font-weight:700; }
+  .log .normal { color:var(--ok); font-weight:700; }
+  .log .dispatch { color:var(--accent); font-weight:700; }
+  .log .recall { color:var(--accent); font-weight:700; }
+  .hint { font-size:12px; color:var(--muted); line-height:1.6; margin-top:10px; }
+  .err { color:var(--bad); font-size:13px; margin-top:10px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>Smart Home 관제 <span>· home/vitals · home/alert</span></h1>
+
+<div class="panel">
+  <div class="label">브로커 연결</div>
+  <div class="row">
+    <input type="text" id="url" spellcheck="false" autocapitalize="off" autocomplete="off" />
+    <button class="action" id="btnConnect">연결</button>
+    <button class="action secondary" id="btnDisconnect">해제</button>
+  </div>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">연결 안 됨</span></div>
+  <div class="err" id="err"></div>
+</div>
+
+<div class="panel">
+  <div class="label">거주자 상태</div>
+  <div class="state lv0" id="stateBox">
+    <div class="name" id="stateName">—</div>
+    <div class="sub" id="stateSub">수신 대기 중</div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="n">심박 (BPM)</div><div class="v" id="hr">—</div></div>
+    <div class="metric"><div class="n">움직임</div><div class="v" id="motion">—</div></div>
+    <div class="metric"><div class="n">위치</div><div class="v" id="room" style="font-size:17px">—</div></div>
+  </div>
+  <div class="kv" id="vitalInfo">수신 없음</div>
+</div>
+
+<div class="panel">
+  <div class="label">앰뷸런스 상태</div>
+  <div class="amb m-idle" id="ambBox">
+    <div class="mode" id="ambMode">—</div>
+    <div class="sub" id="ambSub">수신 대기 중</div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="n">LEFT</div><div class="v" id="al">—</div></div>
+    <div class="metric"><div class="n">RIGHT</div><div class="v" id="ar">—</div></div>
+  </div>
+  <div class="kv" id="ambInfo">수신 없음</div>
+</div>
+
+<div class="panel dispatch" id="dispatchPanel">
+  <div class="label">출동 지령 · 관제 승인</div>
+  <div class="ask" id="askText">현재 출동 요청이 없습니다</div>
+  <div class="row">
+    <button class="go"   id="btnGo">🚑 출동</button>
+    <button class="back" id="btnBack">↩ 복귀</button>
+  </div>
+  <div class="hint">
+    경보가 왔다고 앰뷸런스가 저절로 나가지 않습니다.
+    <b>사람이 출동을 승인해야</b> 움직입니다. 실제 119 상황실도 같은 순서입니다.
+  </div>
+</div>
+
+<div class="panel">
+  <div class="label">상황 발생 (시연용 수동 트리거)</div>
+  <div class="row">
+    <button class="trig fall"  data-type="fall">낙상 발생</button>
+    <button class="trig nomo"  data-type="no_motion">무동작</button>
+    <button class="trig clear" data-type="clear">정상 복귀</button>
+  </div>
+  <div class="hint">
+    실제 시스템에서는 집 안 센서가 이 신호를 보냅니다.
+    지금은 시뮬레이터가 대신하며, 시연 중 원하는 시점에 상황을 만들기 위해 버튼을 둡니다.
+  </div>
+</div>
+
+<div class="panel">
+  <div class="label">이벤트 기록 (home/alert)</div>
+  <div class="log" id="log"><span class="t">대기 중…</span></div>
+</div>
+
+<script src="./mqtt.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var TOPIC_VITALS  = "home/vitals";
+  var TOPIC_ALERT   = "home/alert";
+  var TOPIC_TRIGGER = "home/trigger";
+  var TOPIC_VSTATE  = "veh/state";
+  var TOPIC_DISPATCH= "veh/dispatch";
+  var STALE_MS = 3000;
+  var lastVstateAt = 0;
+  var alertLevel = 0;
+  var ambMode = "idle";
+
+  var MODE = {
+    idle:       ["대기",      "출동 준비 완료"],
+    standby:    ["출동 대기", "출동 승인을 기다리고 있습니다"],
+    dispatched: ["출동 중",   "현장으로 이동하고 있습니다"],
+    arrived:    ["현장 도착", "구조 대기 중"],
+    returning:  ["복귀 중",   "기지로 돌아가는 중"],
+    manual:     ["수동 조종", "사람이 직접 조종하고 있습니다"]
+  };
+
+  var el = function (id) { return document.getElementById(id); };
+  var urlInput = el("url"), dot = el("dot"), statusText = el("statusText"), errBox = el("err");
+  var client = null, lastVitalsAt = 0;
+
+  urlInput.value = "ws://" + (location.hostname || "127.0.0.1") + ":9001";
+
+  if (typeof mqtt === "undefined") {
+    errBox.style.display = "block";
+    errBox.textContent = "mqtt.min.js 를 찾지 못했습니다. 이 파일과 같은 폴더에 있어야 합니다.";
+  }
+
+  var LABEL = { normal: "정상", no_motion: "움직임 없음", fall: "낙상 감지",
+                dispatch: "출동 승인", recall: "복귀 지시" };
+
+  function setStatus(cls, text) {
+    dot.className = "dot" + (cls ? " " + cls : "");
+    statusText.textContent = text;
+  }
+
+  function stamp() {
+    var d = new Date(), p = function (n, w) { return String(n).padStart(w, "0"); };
+    return p(d.getHours(),2) + ":" + p(d.getMinutes(),2) + ":" + p(d.getSeconds(),2);
+  }
+
+  function addLog(type, room) {
+    var box = el("log");
+    if (box.dataset.started !== "1") { box.innerHTML = ""; box.dataset.started = "1"; }
+    var line = document.createElement("div");
+    line.innerHTML = '<span class="t">' + stamp() + '</span>  ' +
+                     '<span class="' + type + '">' + (LABEL[type] || type) + '</span>' +
+                     (room ? '  <span class="t">@ ' + room + '</span>' : '');
+    box.insertBefore(line, box.firstChild);
+  }
+
+  /* 출동 버튼 상태.
+     경보가 있고 아직 안 나갔으면 -> 승인 요청 (붉게 점멸)
+     이미 나가 있으면 -> 복귀만 가능 */
+  function renderDispatch() {
+    var connected = !!(client && client.connected);
+    var out   = (ambMode === "dispatched" || ambMode === "arrived");
+    var idle  = (ambMode === "idle" || ambMode === "standby");
+    var armed = connected && alertLevel >= 1 && idle;
+
+    el("dispatchPanel").className = "panel dispatch" + (armed ? " armed" : "");
+    el("btnGo").disabled   = !connected || !idle;
+    el("btnBack").disabled = !connected || !out;
+
+    el("askText").textContent =
+      !connected                ? "브로커에 연결하세요" :
+      armed                     ? "🚨 앰뷸런스를 출동시킬까요?" :
+      ambMode === "dispatched"  ? "출동 중입니다" :
+      ambMode === "arrived"     ? "현장에 도착했습니다" :
+      ambMode === "returning"   ? "복귀하는 중입니다" :
+      ambMode === "manual"      ? "사람이 직접 조종 중입니다" :
+                                  "현재 출동 요청이 없습니다";
+  }
+
+  function renderVitals(v) {
+    lastVitalsAt = Date.now();
+    var lv = Number(v.level) || 0;
+    alertLevel = lv;
+    renderDispatch();
+    var box = el("stateBox");
+    box.className = "state lv" + lv;
+    el("stateName").textContent = LABEL[v.state] || v.state;
+    el("stateSub").textContent = lv === 0
+      ? "이상 없음"
+      : "지속 " + (v.held != null ? v.held.toFixed(0) : "?") + "초 · 조치 필요";
+    el("hr").textContent = v.hr != null ? v.hr : "—";
+    el("motion").textContent = v.motion ? "있음" : "없음";
+    el("room").textContent = v.room || "—";
+  }
+
+  function renderVstate(s) {
+    lastVstateAt = Date.now();
+    var m = String(s.mode || "idle");
+    ambMode = m;
+    if (s.alert != null) { alertLevel = Number(s.alert) || 0; }
+    renderDispatch();
+    var info = MODE[m] || [m, ""];
+    el("ambBox").className = "amb m-" + m;
+    el("ambMode").textContent = info[0];
+    el("ambSub").textContent = info[1];
+    el("al").textContent = (s.l >= 0 ? "+" : "") + Number(s.l).toFixed(2);
+    el("ar").textContent = (s.r >= 0 ? "+" : "") + Number(s.r).toFixed(2);
+  }
+
+  function tickStale() {
+    if (!lastVitalsAt) { el("vitalInfo").textContent = "수신 없음"; }
+    else {
+      var stale = Date.now() - lastVitalsAt > STALE_MS;
+      el("vitalInfo").textContent = stale
+        ? "수신 끊김 (home_sim.py 가 실행 중인가요?)"
+        : "수신 중 · 마지막 " + stamp();
+    }
+
+    if (!lastVstateAt) { el("ambInfo").textContent = "수신 없음"; }
+    else {
+      var vs = Date.now() - lastVstateAt > STALE_MS;
+      el("ambInfo").textContent = vs
+        ? "수신 끊김 (rover_ambulance.py 가 실행 중인가요?)"
+        : "수신 중";
+    }
+  }
+  setInterval(tickStale, 1000);
+
+  function trigger(type) {
+    if (!client || !client.connected) { return; }
+    client.publish(TOPIC_TRIGGER, JSON.stringify({ type: type }), { qos: 0, retain: false });
+  }
+
+  document.querySelectorAll("button.trig").forEach(function (b) {
+    b.addEventListener("click", function () { trigger(b.getAttribute("data-type")); });
+  });
+
+  function dispatch(action) {
+    if (!client || !client.connected) { return; }
+    client.publish(TOPIC_DISPATCH, JSON.stringify({ action: action }), { qos: 0, retain: false });
+    addLog(action === "go" ? "dispatch" : "recall", null);
+  }
+  el("btnGo").addEventListener("click",   function () { dispatch("go"); });
+  el("btnBack").addEventListener("click", function () { dispatch("return"); });
+
+  function connect() {
+    if (typeof mqtt === "undefined") { return; }
+    disconnect();
+    var url = urlInput.value.trim();
+    if (!url) { return; }
+
+    setStatus("warn", "연결 중… " + url);
+    errBox.style.display = "none";
+
+    client = mqtt.connect(url, {
+      clientId: "home-" + Math.random().toString(16).slice(2, 10),
+      clean: true, keepalive: 15, reconnectPeriod: 2000, connectTimeout: 5000
+    });
+
+    client.on("connect", function () {
+      setStatus("ok", "MQTT 연결됨");
+      client.subscribe(TOPIC_VITALS, { qos: 0 });
+      client.subscribe(TOPIC_ALERT,  { qos: 0 });
+      client.subscribe(TOPIC_VSTATE, { qos: 0 });
+      renderDispatch();
+    });
+    client.on("reconnect", function () { setStatus("warn", "재연결 시도 중…"); });
+    client.on("close",     function () { setStatus("", "연결 끊김"); renderDispatch(); });
+    client.on("error", function (e) {
+      setStatus("", "연결 오류");
+      errBox.style.display = "block";
+      errBox.textContent = "오류: " + (e && e.message ? e.message : String(e));
+    });
+
+    client.on("message", function (topic, message) {
+      var d;
+      try { d = JSON.parse(message.toString()); } catch (_) { return; }
+      if (topic === TOPIC_VITALS) { renderVitals(d); }
+      else if (topic === TOPIC_ALERT) { addLog(d.type, d.room); }
+      else if (topic === TOPIC_VSTATE) { renderVstate(d); }
+    });
+  }
+
+  function disconnect() {
+    if (client) { try { client.end(true); } catch (_) {} client = null; }
+    setStatus("", "연결 안 됨");
+    renderDispatch();
+  }
+
+  el("btnConnect").addEventListener("click", connect);
+  el("btnDisconnect").addEventListener("click", disconnect);
+  renderDispatch();
+})();
+</script>
+</body>
+</html>

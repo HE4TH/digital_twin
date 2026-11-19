@@ -1,0 +1,33 @@
+; ---------------------------------------------------------------------------
+;  MqttVehicle 브릿지 설정
+;
+;  프로젝트의 Config\DefaultGame.ini 파일 맨 아래에 아래 블록을 붙여넣으세요.
+;  이 값들은 재빌드 없이 바뀝니다. 저장 후 Play 만 다시 하면 됩니다.
+;
+;  학생들과 실습할 때 조마다 고쳐야 하는 건 BrokerHost 한 줄뿐입니다.
+; ---------------------------------------------------------------------------
+
+[/Script/MqttVehicle.MqttVehicleBridgeSubsystem]
+
+; 라즈베리파이 IP. Pi 에서 hostname -I 로 확인한 주소.
+BrokerHost=192.168.219.51
+
+BrokerPort=1883
+
+; 로버의 rover_ambulance.py 와 반드시 같은 토픽이어야 한다.
+CmdTopic=veh/cmd
+
+; 집에서 오는 경보 (home_sim.py 발행)
+AlertTopic=home/alert
+
+; Unreal 이 상황을 발생시킬 때 쓰는 토픽 (home_sim.py 구독)
+TriggerTopic=home/trigger
+
+; 관제(휴대폰)의 출동 승인 (home.html 발행, rover_ambulance.py 구독)
+DispatchTopic=veh/dispatch
+
+; 명령이 끊기면 이 시간(초) 뒤 정지. 로버 쪽 TIMEOUT 과 같은 값으로 맞춘다.
+InputTimeout=0.3
+
+; 이 시간(초) 이상 조용하면 제어권을 놓아 키보드로 직접 운전할 수 있게 한다.
+ControlReleaseAfter=3.0

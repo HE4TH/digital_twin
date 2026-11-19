@@ -1,0 +1,15 @@
+[Unit]
+Description=Exhibit car_subscriber.py (RC car MQTT node)
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Exhibit
+ExecStart=/home/pi/Digital_Twin/venv/bin/python /home/pi/Exhibit/car_subscriber.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

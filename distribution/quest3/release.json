@@ -1,0 +1,12 @@
+{
+  "version": "1.0.3",
+  "version_code": 4,
+  "package": "com.he4th.dmix",
+  "apk_sha256": "3128d092bc97025fa7732fbe6a33104fe012ce9a390fb38de5c567157b012873",
+  "apk_bytes": 263868176,
+  "device_tested": false,
+  "video_target_fps": 30,
+  "apk_installed": true,
+  "caption_fixture_verified": true,
+  "live_caption_comparison_verified": false
+}
