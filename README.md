@@ -36,14 +36,16 @@ Quest 3 / Unreal Engine
 
 | 경로 | 내용 |
 | --- | --- |
-| `MqttVehicle 5.7/` | 기준 Unreal Engine 5.7 프로젝트. 게임 로직, 맵, 입력, Android 패키징 설정 포함 |
-| `MqttVehicle 5.7/Source/MqttVehicle/` | 탐사선, MQTT 브릿지, 자동복귀, Quest 대시보드 연동 C++ 코드 |
-| `MqttVehicle 5.7/Config/` | MQTT 브로커, Pixel Streaming, Android/Quest 대시보드 주소 설정 |
-| `dashboard/` | Pi 또는 Windows에서 실행하는 웹 대시보드, 영상 중계, RC 수신기 서비스 정의 |
-| `tools/` | Unreal 에디터와 대시보드 연결, RC 세션 보조 도구 |
-| `distribution/quest3/` | Quest APK 설치 도구와 배포 안내 |
-| `materials/` | 초기 MQTT·Pi·Unreal 교육 자료, 에셋, 참고 코드 |
-| `docs/` | 현재 상태, 개발 이력, 전체 파일 목록과 인계 문서 |
+| `unreal/MqttVehicle/` | 기준 Unreal Engine 5.7 프로젝트. 게임 로직, 맵, 입력, Android 패키징 설정 포함 |
+| `unreal/MqttVehicle/Source/MqttVehicle/` | 탐사선, MQTT 브릿지, 자동복귀, Quest 대시보드 연동 C++ 코드 |
+| `unreal/MqttVehicle/Config/` | MQTT 브로커, Pixel Streaming, Android/Quest 대시보드 주소 설정 |
+| `raspberry-pi/dashboard/` | Pi 또는 Windows에서 실행하는 웹 대시보드, 영상 중계, RC 수신기 서비스 정의 |
+| `raspberry-pi/rover/` | Pi에서 실행하는 RC카 모터 수신기와 검사 코드 |
+| `unreal/tools/` | Unreal 에디터와 대시보드 연결, RC 세션 보조 도구 |
+| `quest3/` | Quest APK 설치 도구와 배포 안내 |
+| `assets/` | CC BY·CC0 원본 에셋과 직접 만든 고래 모델 |
+| `docs/` | 현재 상태, 개발 이력, 전체 파일 목록, 인계 문서, 에셋 출처 |
+| `archive/` | 지금은 쓰지 않는 이전 프로젝트 사본, 초기 전시 코드, 옛 안내서와 참고 자료 |
 
 ## 실행 개요
 
@@ -59,11 +61,11 @@ Quest 3 / Unreal Engine
 
 | 문서 | 용도 |
 | --- | --- |
-| [AI_HANDOFF.md](AI_HANDOFF.md) | 다른 PC 또는 다른 작업자가 이어서 개발하기 위한 현재 환경·작업 인계 |
+| [docs/AI_HANDOFF.md](docs/AI_HANDOFF.md) | 다른 PC 또는 다른 작업자가 이어서 개발하기 위한 현재 환경·작업 인계 |
 | [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) | 구현·검증·미검증 사항과 다음 작업 |
 | [docs/DEVELOPMENT_HISTORY.md](docs/DEVELOPMENT_HISTORY.md) | 날짜별 수정 사항, 배포·검증 기록 |
 | [docs/FILE_GUIDE.md](docs/FILE_GUIDE.md) | 저장소 전체 파일의 역할과 보존 범위 |
-| [distribution/quest3/README.md](distribution/quest3/README.md) | Quest APK 설치 안내 |
+| [quest3/README.md](quest3/README.md) | Quest APK 설치 안내 |
 
 개발 과정의 생성형 AI 활용과 향후 확장 계획은 실제 실행 기능과 구분해 문서화합니다. 현재 자동복귀는 학습형 AI가 아니라 3D A* 경로 탐색으로 동작합니다.
 
@@ -74,12 +76,12 @@ Quest 3 / Unreal Engine
 | 제외 경로 | 이유 |
 | --- | --- |
 | `materials/fab_underwater_world_portable/`, `materials/corals_fbx.zip` | Fab Standard 라이선스 에셋 (PackDev, DmitriyDryzhak) |
-| `MqttVehicle 5.7/Content/Underwater/Meshes/`, `MqttVehicle 5.7/Content/Underwater/Textures/` | 위 Fab 에셋의 Unreal 변환본 |
-| `MqttVehicle 5.7/Content/Vefects/` | Fab Standard 라이선스 에셋 (Vefects Bubbles VFX) |
-| `materials/selected_free_assets/Wyreframe/`, `MqttVehicle 5.7/Content/Underwater/Selected/Tailor/` | CGTrader Royalty Free 에셋 (Tailor 물고기)과 변환본 |
-| `MqttVehicle 5.7/Plugins/MQTT/`, `materials/mqtt_headers/` | Epic Games 엔진 플러그인 소스 (UE5 엔진의 실험적 MQTT 플러그인을 사용) |
-| `MqttVehicle 5.7/Blender_OBJ.zip`, `MqttVehicle/Blender_OBJ.zip`, `MqttVehicle 5.7/Content/00_Works/`, `MqttVehicle/Content/00_Works/` | 출처 미확인 3D 에셋 |
-| `materials/수업자료/`, `materials/references/ch12_mqtt.pdf` | 출처 미확인 교육 자료 |
+| `unreal/MqttVehicle/Content/Underwater/Meshes/`, `unreal/MqttVehicle/Content/Underwater/Textures/` | 위 Fab 에셋의 Unreal 변환본 |
+| `unreal/MqttVehicle/Content/Vefects/` | Fab Standard 라이선스 에셋 (Vefects Bubbles VFX) |
+| `assets/selected_free_assets/Wyreframe/`, `unreal/MqttVehicle/Content/Underwater/Selected/Tailor/` | CGTrader Royalty Free 에셋 (Tailor 물고기)과 변환본 |
+| `unreal/MqttVehicle/Plugins/MQTT/`, `materials/mqtt_headers/` | Epic Games 엔진 플러그인 소스 (UE5 엔진의 실험적 MQTT 플러그인을 사용) |
+| `unreal/MqttVehicle/Blender_OBJ.zip`, `archive/MqttVehicle_old/Blender_OBJ.zip`, `unreal/MqttVehicle/Content/00_Works/`, `archive/MqttVehicle_old/Content/00_Works/` | 출처 미확인 3D 에셋 |
+| `materials/수업자료/`, `archive/references/ch12_mqtt.pdf` | 출처 미확인 교육 자료 |
 | `output/`, 루트의 작품설명 판넬 양식(`.pptx`, `.hwp`) | 개인정보가 포함된 발표·제출 자료 |
 
 CC BY 4.0·CC0 에셋은 출처 표기와 함께 포함했습니다. 자세한 내용은 [docs/ASSET_CREDITS.md](docs/ASSET_CREDITS.md)를 참고하세요.

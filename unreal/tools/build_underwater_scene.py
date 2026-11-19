@@ -18,7 +18,7 @@ import random
 import sys
 import unreal as ue
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'materials' / 'fab_underwater_world_portable'
 CONTENT = '/Game/Underwater'
 LEVEL = CONTENT + '/Maps/L_UnderwaterExploration'
@@ -272,7 +272,7 @@ def update_danger_only():
 def polish_scene():
     """Keep gameplay anchors and scenery; update only explicitly owned presentation actors."""
     import runpy
-    rover = runpy.run_path(str(ROOT / 'tools/build_exploration_rover.py'))
+    rover = runpy.run_path(str(ROOT / 'unreal/tools/build_exploration_rover.py'))
     mode = rover['build_rover']()
     world = ue.get_editor_subsystem(ue.UnrealEditorSubsystem).get_editor_world()
     world.get_world_settings().set_editor_property('default_game_mode', mode)
@@ -397,7 +397,7 @@ def main():
         meshes.append(mesh)
         REPORT['assets'][mesh.get_name()] = str(mesh.get_bounds())
 
-    whale = imported(ROOT / 'materials/whale_original/Blue_Whale_Original.fbx',
+    whale = imported(ROOT / 'assets/whale_original/Blue_Whale_Original.fbx',
                      'Whale', 'SM_BlueWhale', mesh=True)
     REPORT['assets']['SM_BlueWhale'] = str(whale.get_bounds())
     # Recreate the four documented Blender colors as explicit saved materials.

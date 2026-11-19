@@ -1,7 +1,7 @@
 """Offline regression tests: no Paho, broker connection, GPIO, or real motors.
 
 Run from the repository root only after execution is resumed:
-python -m unittest discover -s materials/pi/tests -v
+python -m unittest discover -s raspberry-pi/rover/tests -v
 """
 
 import importlib.util

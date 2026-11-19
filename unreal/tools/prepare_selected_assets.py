@@ -1,6 +1,6 @@
 """Blender 4.5 background conversion of the approved CC BY GLBs (no auto scripts).
 
-blender --background --factory-startup --disable-autoexec --python tools/prepare_selected_assets.py
+blender --background --factory-startup --disable-autoexec --python unreal/tools/prepare_selected_assets.py
 Originals remain untouched. Static seaweed uses the original geometry plus UE wind,
 so hundreds of instances do not each require a skeletal animation tick.
 """
@@ -12,7 +12,7 @@ import bpy
 import bmesh
 from mathutils import Vector, Matrix
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'materials/selected_free_assets'
 OUT = SOURCE / 'Converted'
 OUT.mkdir(exist_ok=True)

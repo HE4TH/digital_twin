@@ -7,10 +7,10 @@ import time
 import urllib.request
 import unreal as ue
 
-root = Path(ue.Paths.project_dir()).resolve().parent
-config_path = root/'dashboard/.runtime/remote-bridge.json'
+root = Path(ue.Paths.project_dir()).resolve().parent.parent
+config_path = root/'raspberry-pi/dashboard/.runtime/remote-bridge.json'
 if not config_path.exists():
-    config_path = root/'dashboard/.runtime/bridge.json'
+    config_path = root/'raspberry-pi/dashboard/.runtime/bridge.json'
 config = json.loads(config_path.read_text(encoding='utf-8'))
 from urllib.parse import urlsplit
 endpoint = urlsplit(config['url'])

@@ -9,7 +9,7 @@ import json
 import sys
 import unreal as ue
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BASE = '/Game/Underwater'
 PAWN = BASE + '/Vehicles/BP_ExplorationRover'
 MODE = BASE + '/Vehicles/BP_UnderwaterGameMode'

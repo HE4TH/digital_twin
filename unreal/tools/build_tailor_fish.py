@@ -8,11 +8,11 @@ import math
 import sys
 
 # Rebuild the cm-normalized derivative with Blender in background mode:
-# blender -b --python tools/build_tailor_fish.py -- --prepare-fbx
+# blender -b --python unreal/tools/build_tailor_fish.py -- --prepare-fbx
 if '--prepare-fbx' in sys.argv:
     import bpy
-    root = Path(__file__).resolve().parents[1]
-    source = root / 'materials/selected_free_assets/Wyreframe/Tailor'
+    root = Path(__file__).resolve().parents[2]
+    source = root / 'assets/selected_free_assets/Wyreframe/Tailor'
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.fbx(filepath=str(source / 'Model/LOD0/TailorsculptedLOD0WithAnim.fbx'))
     armature = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
@@ -47,8 +47,8 @@ if '--prepare-fbx' in sys.argv:
 
 import unreal as ue
 
-ROOT = Path(__file__).resolve().parents[1]
-SRC = ROOT / 'materials/selected_free_assets/Wyreframe/Tailor'
+ROOT = Path(__file__).resolve().parents[2]
+SRC = ROOT / 'assets/selected_free_assets/Wyreframe/Tailor'
 BASE = '/Game/Underwater/Selected/Tailor'
 MAP = '/Game/Underwater/Maps/L_UnderwaterExploration'
 TAG = 'TailorFish_v1'

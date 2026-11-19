@@ -30,7 +30,7 @@
 - 사용자 요청에 따라 RC 수신 시작, RC 명령 송신 켜기/끄기, 자동복귀 시작만 표시한다. 수동 전환·수신 중지·복귀 취소·별도 정지 버튼은 표시하지 않는다.
 - QuestDashboardComponent가 /api/quest/control에 0.5초 간격으로 상태/적용 응답을 보내고 명령을 받는다. 명령 ID 중복 실행 방지, 2초 서버 대기 만료, 에디터/Quest 응답 분리를 적용한다. 복귀 가능 여부와 송신 게이트/Quest MQTT 연결을 표시한다. 구형 영상 전용 APK는 제어 버튼을 활성화하지 않는다.
 - 새 APK는 세션 시작 시 RC 송신 게이트가 꺼진다. 사용자가 송신 켜기를 눌러야 주행 명령을 전달한다. 송신 끄기 또는 대시보드 서버와 3초 통신 단절 시 게이트를 닫고 MQTT 출력값을 0으로 보낸다. 연결 복구만으로 재활성화하지 않는다. 가상 탐사선 움직임과 기존 PC 설정은 유지한다. Pi 수신기의 기존 명령 단절 정지도 유지한다.
-- Pi 수신 시작은 고정된 dmix-rc-session.service만 systemctl --user로 시작한다. 셸/임의 명령 실행을 허용하지 않는다. 송신 켜짐·처리 중 요청·구형 Quest 상태일 때 실행을 거부한다. dashboard/dmix-rc-session.service와 setup_rc_service.sh를 준비했다. 설치 스크립트는 수신기를 시작/재시작하지 않고 대시보드만 재시작한다. 수신기 부팅 자동 시작은 추가하지 않는다.
+- Pi 수신 시작은 고정된 dmix-rc-session.service만 systemctl --user로 시작한다. 셸/임의 명령 실행을 허용하지 않는다. 송신 켜짐·처리 중 요청·구형 Quest 상태일 때 실행을 거부한다. raspberry-pi/dashboard/dmix-rc-session.service와 setup_rc_service.sh를 준비했다. 설치 스크립트는 수신기를 시작/재시작하지 않고 대시보드만 재시작한다. 수신기 부팅 자동 시작은 추가하지 않는다.
 - 검증: 로컬 HTTP/상태 검사10개 통과, JS 구문 검사 통과, Android C++ 빌드/쿠킹/패키징 ExitCode0, APK ZIP CRC 통과. APK 263,852,052 bytes, SHA-256 14ffc684c9c497c15a380165f91ed4ad193f51acc350ee2ff86237f9aa913f26.
 - Pi 접속 시 타임아웃. 사용자가 현재 Pi 미연결이며 Pi 작업은 나중에 하자고 요청했다. Pi 배포·서비스 설치·실기 버튼/모터/영상 검증은 보류다. 새 APK 설치도 아직 확인하지 않았다. GitHub 원격 게시 완료와 구분한다.
 
@@ -61,12 +61,12 @@
 - 부팅 자동 시작 해제: `ssh pi@10.95.86.138 "sudo systemctl disable --now dmix-dashboard dmix-pixel"`.
 - 소스 갱신은 로컬 dashboard 파일을 Pi 배포 폴더로 복사한다. `pixel/player.js` 변경 후 Pi의 pixel 폴더에서 `npm ci --ignore-scripts` 및 `npm run build`가 필요하다. Python/신호 서버 코드 변경 시 해당 서비스를 재시작한다.
 
-노트북의 `dashboard/.runtime/remote-bridge.json`은 Pi의 `.runtime/bridge.json`을 SSH로 가져온 비공개 연결 설정이다. `connect_local_dashboard.py`가 이 파일을 우선 사용한다. Pi의 `.runtime/bridge-token`은 서비스 재시작/부팅에도 유지하며, 인증 파일들은 Git에 올리지 않는다. 공개 파일로 HTTP 제공하지 않는다. Pi 주소가 바뀌면 서비스의 public-host/DMIX_PUBLIC_HOST, Unreal ConnectionURL, 브릿지의 허용 주소와 로컬 연결 설정을 함께 갱신한다.
+노트북의 `raspberry-pi/dashboard/.runtime/remote-bridge.json`은 Pi의 `.runtime/bridge.json`을 SSH로 가져온 비공개 연결 설정이다. `connect_local_dashboard.py`가 이 파일을 우선 사용한다. Pi의 `.runtime/bridge-token`은 서비스 재시작/부팅에도 유지하며, 인증 파일들은 Git에 올리지 않는다. 공개 파일로 HTTP 제공하지 않는다. Pi 주소가 바뀌면 서비스의 public-host/DMIX_PUBLIC_HOST, Unreal ConnectionURL, 브릿지의 허용 주소와 로컬 연결 설정을 함께 갱신한다.
 
 Unreal을 열고 아래 명령을 실행한 뒤 Play/VR Preview를 시작한다. 브릿지는 에디터 세션마다 실행하며, Pi 서비스만 재시작할 때는 인증이 유지되어 재실행하지 않아도 된다.
 
 ```text
-py "C:/Users/user/Documents/d-mix/tools/connect_local_dashboard.py"
+py "C:/Users/user/Documents/d-mix/unreal/tools/connect_local_dashboard.py"
 ```
 
 대시보드는 '관전자 전체 화면'이 기본이다. Unreal의 별도 SceneCapture가 현재 시점에서 1280x720, 수평 시야각100도, 최대30fps의 단안 영상을 만든다. 시청자가 없으면 추가 장면 렌더링을 하지 않는다. 헤드셋의 양안 영상은 유지하며 과거 '구형 VR 좌우 영상 · 한쪽 눈' 옵션은 이전 송신 방식용이다. 정확히 양쪽 눈 영상을 합성한 결과는 아니며 별도의 가로형 관전자 투영이다.
@@ -78,7 +78,7 @@ MQTT 브로커는 기존 부팅 자동 시작 상태다. **RC 수신기는 별�
 Windows에서 Python 3와 Node.js 22 LTS 설치 후 `start.cmd`를 실행하고 http://127.0.0.1:5050 을 연다.
 서버는 별도 백그라운드 프로세스로 실행된다. 시작 완료 후 실행 창이 닫혀도 대시보드와 영상 서버는 계속 실행된다. 설치/시작이 완료되기 전에는 창을 닫지 않는다. PC 재부팅 후에는 다시 실행해야 한다.
 첫 실행은 가상환경과 paho-mqtt를 설치하므로 인터넷 연결이 필요하다. 이후 화면은 외부 CDN 없이 동작한다.
-종료: `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\user\Documents\d-mix\dashboard\start.ps1" -Stop`.
+종료: `powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\user\Documents\d-mix\raspberry-pi\dashboard\start.ps1" -Stop`.
 `start.cmd -Stop`도 지원한다. 실행기가 기록한 프로세스의 PID·시작 시각·실행 파일을 확인해 종료한다. 기존 영상 서버를 재사용한 경우 그 서버는 종료하지 않는다. Pi 수신기를 시작/종료하지 않는다.
 구형 실행기로 켜둔 서버가 있다면 그 창을 먼저 닫고 새 실행기를 사용한다. 같은 설정으로 다시 실행하면 기존 백그라운드 서버를 재사용한다. 설정 변경은 `-Stop` 후 재실행한다.
 로그는 `.runtime/dashboard.log`, `.runtime/dashboard-error.log`, `.runtime/pixel.log`, `.runtime/pixel-error.log`에 저장된다. `.runtime/background-processes.json`은 로컬 실행 정보이며 Git에 올리지 않는다.
@@ -93,7 +93,7 @@ MQTT 접속 없는 실행은 `-NoMqtt`, 별도 Python 실행 파일 지정은 `-
 대시보드 서버 실행 후 에디터 Cmd 콘솔에 아래 명령 실행:
 
 ```text
-py "C:/Users/user/Documents/d-mix/tools/connect_local_dashboard.py"
+py "C:/Users/user/Documents/d-mix/unreal/tools/connect_local_dashboard.py"
 ```
 
 Python 모드라면 `exec(open("위 절대경로", encoding="utf-8").read())` 형태로 실행한다.
@@ -126,7 +126,7 @@ Python 모드라면 `exec(open("위 절대경로", encoding="utf-8").read())` �
 3. 영상이 자동 표시된다. 종료하면 대기 화면으로 돌아간다. 자동재생 제한 시 영상 재생 버튼을 누른다.
 
 로컬 영상 서버: 8888(Unreal), 8889(브라우저). 대시보드 기본 포트5050 사용.
-의존성 업데이트 후에는 powershell -ExecutionPolicy Bypass -File dashboard/setup_pixel.ps1 재실행.
+의존성 업데이트 후에는 powershell -ExecutionPolicy Bypass -File raspberry-pi/dashboard/setup_pixel.ps1 재실행.
 영상은 관전자용이며 원격 입력을 받지 않는다. 운영 상태/버튼 연결은 위 Unreal 연결 절차가 별도로 필요하다.
 VR Preview의 좌우 영상 수신 및 한쪽 눈 표시는 확인했다. 패키징 앱 영상 수신은 아직 검증하지 않았다. 독립 실행용 AutoStartStream=True도 지정했으나 패키징 빌드에서의 실제 수신은 추후 확인한다.
 

@@ -140,7 +140,7 @@
 - 사용자 요청에 따라 RC 수신 시작, RC 명령 송신 켜기/끄기, 자동복귀 시작만 표시한다. 수동 전환·수신 중지·복귀 취소·별도 정지 버튼은 표시하지 않는다.
 - QuestDashboardComponent가 /api/quest/control에 0.5초 간격으로 상태/적용 응답을 보내고 명령을 받는다. 명령 ID 중복 실행 방지, 2초 서버 대기 만료, 에디터/Quest 응답 분리를 적용한다. 복귀 가능 여부와 송신 게이트/Quest MQTT 연결을 표시한다. 구형 영상 전용 APK는 제어 버튼을 활성화하지 않는다.
 - 새 APK는 세션 시작 시 RC 송신 게이트가 꺼진다. 사용자가 송신 켜기를 눌러야 주행 명령을 전달한다. 송신 끄기 또는 대시보드 서버와 3초 통신 단절 시 게이트를 닫고 MQTT 출력값을 0으로 보낸다. 연결 복구만으로 재활성화하지 않는다. 가상 탐사선 움직임과 기존 PC 설정은 유지한다. Pi 수신기의 기존 명령 단절 정지도 유지한다.
-- Pi 수신 시작은 고정된 dmix-rc-session.service만 systemctl --user로 시작한다. 셸/임의 명령 실행을 허용하지 않는다. 송신 켜짐·처리 중 요청·구형 Quest 상태일 때 실행을 거부한다. dashboard/dmix-rc-session.service와 setup_rc_service.sh를 준비했다. 설치 스크립트는 수신기를 시작/재시작하지 않고 대시보드만 재시작한다. 수신기 부팅 자동 시작은 추가하지 않는다.
+- Pi 수신 시작은 고정된 dmix-rc-session.service만 systemctl --user로 시작한다. 셸/임의 명령 실행을 허용하지 않는다. 송신 켜짐·처리 중 요청·구형 Quest 상태일 때 실행을 거부한다. raspberry-pi/dashboard/dmix-rc-session.service와 setup_rc_service.sh를 준비했다. 설치 스크립트는 수신기를 시작/재시작하지 않고 대시보드만 재시작한다. 수신기 부팅 자동 시작은 추가하지 않는다.
 - 검증: 로컬 HTTP/상태 검사10개 통과, JS 구문 검사 통과, Android C++ 빌드/쿠킹/패키징 ExitCode0, APK ZIP CRC 통과. APK 263,852,052 bytes, SHA-256 14ffc684c9c497c15a380165f91ed4ad193f51acc350ee2ff86237f9aa913f26.
 - Pi 접속 시 타임아웃. 사용자가 현재 Pi 미연결이며 Pi 작업은 나중에 하자고 요청했다. Pi 배포·서비스 설치·실기 버튼/모터/영상 검증은 보류다. 새 APK 설치도 아직 확인하지 않았다. GitHub 원격 게시 완료와 구분한다.
 
@@ -188,7 +188,7 @@
 - 새 운영 주소는 http://10.95.86.138:5050 이다. Pi /home/pi/dmix-dashboard에 기존 대시보드 소스를 배포하고 Node.js 20.19.2/npm 9.2.0을 설치했다. Python paho-mqtt는 기존 설치를 확인했다. 영상 번들은 Pi에서 npm ci --ignore-scripts와 npm run build로 생성했다.
 - /etc/systemd/system/dmix-dashboard.service 및 dmix-pixel.service를 등록했다. User=pi, Restart=on-failure, multi-user.target 부팅 활성화. 각각 웹5050, 신호 연결8888/8889를 사용한다. 두 서비스 enabled/active 및 서비스 재시작 후 정상 응답을 확인했다. Pi 자체 재부팅은 수행하지 않았다. MQTT 브로커는 기존 enabled/active, RC 수신기는 기존 임시 사용자 서비스 그대로이며 부팅 자동 실행은 별도다.
 - server.py는 명시한 public-host만 Host/Origin에 추가하고 Pi의 .runtime/bridge-token을 지속 보관한다. 인증 파일은 HTTP 경로로 제공하지 않는다. 재시작 후 인증 동일성 확인. 노트북의 Git 제외 .runtime/remote-bridge.json에 SSH로 연결 정보를 복사했고 connect_local_dashboard.py가 우선 읽는다. 토큰/키/비밀번호는 문서와 저장소에 포함하지 않는다. Pi 주소가 바뀌면 서비스·Unreal ConnectionURL·허용 호스트·연결 파일을 함께 갱신한다.
-- Pixel Streaming 연결 URL은 ws://10.95.86.138:8888. 웹 플레이어는 접속한 웹페이지의 호스트에 있는 8889로 연결한다. 웹페이지/영상 연결 서버만 Pi에 있으며 실제 Unreal 렌더링/인코딩/VR에는 노트북이 필요하다. Unreal 에디터 세션마다 사용자가 `py "C:/Users/user/Documents/d-mix/tools/connect_local_dashboard.py"`로 상태/운영 제어 브릿지를 연결한다.
+- Pixel Streaming 연결 URL은 ws://10.95.86.138:8888. 웹 플레이어는 접속한 웹페이지의 호스트에 있는 8889로 연결한다. 웹페이지/영상 연결 서버만 Pi에 있으며 실제 Unreal 렌더링/인코딩/VR에는 노트북이 필요하다. Unreal 에디터 세션마다 사용자가 `py "C:/Users/user/Documents/d-mix/unreal/tools/connect_local_dashboard.py"`로 상태/운영 제어 브릿지를 연결한다.
 - 기존 SubmersibleViewComponent에 별도 SceneCapture와 GPU 프레임 producer를 추가했다. 현재 카메라 위치/방향 및 내외부 숨김 규칙을 따르는 1280x720, 수평 FOV100도, 최대30fps 단안 영상이다. 시청자가 있을 때만 추가 렌더링하고 Play 종료 시 이전 producer/FPS로 복원하며 GPU 명령을 비운 뒤 리소스를 해제한다. 기존 반대쪽 카메라 피드/헤드셋 양안 렌더링/차량 제어는 유지한다. GamePreview 자동화·렌더링 불가 실행에서는 관전자 캡처를 시작하지 않는다.
 - 대시보드 기본값을 '관전자 전체 화면'으로 바꾸고 기존 한쪽 눈 잘림 선호를 이전하지 않았다. 과거 스테레오 송신용 한쪽 눈 옵션은 별도로 남겼다. 양쪽 눈 영상을 합성한 파노라마가 아니라 독립 가로 투영이다. GPU 부하는 추가되므로 실제 VR 성능은 사용 중 확인해야 한다.
 - 검증: UE 5.7.4 빌드/링크 성공, PixelCapture 의존성 경고 정리. UnderwaterMovement Success(검사 오류0/경고40), 엔진 초기화의 별도 Condition failed 로그4건 및 DDC 쓰기 제한은 검사 결과와 구분한다. Python HTTP/상태 검사6개는 노트북·Pi 모두 통과했다. 허용 LAN 호스트/Origin/브릿지 인증과 잘못된 요청 거부 포함. 실제 Pi 웹페이지에서 Play 상태·MQTT·RC 상태 및 1280x720 live 영상(readyState4, currentTime 진행)을 확인했고 한쪽 눈 CSS 잘림은 꺼져 있다. 브라우저 오류 로그 없음. 모터 시험은 추가로 수행하지 않았다.
@@ -198,14 +198,14 @@
 
 - VR Preview의 좌우 눈 영상이 Pixel Streaming으로 나란히 전달되는 것을 확인했다. 대시보드의 기본 영상 보기를 'VR 한 화면'으로 변경해 왼쪽 눈 영역만 원래 비율로 중앙 표시한다. 두 눈을 겹치거나 가로로 늘리지 않으며, 화면 비율에 따라 여백이 생길 수 있다.
 - 탐사 화면에 '영상 보기' 선택기를 추가했다. 일반 PC 영상은 'PC / 원본 화면'으로 전환하며 선택은 해당 브라우저에 저장된다. VR 상태를 자동 판정하는 기능은 아니다. 영상 메타데이터/해상도/플레이어 크기 변경 시 표시 크기를 다시 계산한다.
-- dashboard/index.html과 app.js의 표시 처리만 변경했다. 헤드셋 렌더링·Unreal 설정·Pixel Streaming 라이브러리·MQTT/모터 동작은 변경하지 않았다. 서버 재시작/라이브러리 번들 재빌드 없이 대시보드를 새로고침하면 적용된다.
+- raspberry-pi/dashboard/index.html과 app.js의 표시 처리만 변경했다. 헤드셋 렌더링·Unreal 설정·Pixel Streaming 라이브러리·MQTT/모터 동작은 변경하지 않았다. 서버 재시작/라이브러리 번들 재빌드 없이 대시보드를 새로고침하면 적용된다.
 - 검증: 로컬 대시보드의 실제 3648x1968 VR 스트림에서 한쪽 눈 표시를 스크린샷으로 확인했다. 원본 모드 전환 시 잘림 해제와 contain 비율 표시, VR 모드 복귀를 확인했다. Node 구문 검사 통과, 브라우저 오류 로그 없음. 운영 상태/제어 연결은 영상 연결과 별개이며 기존 상태 그대로다. GitHub 미게시.
 
 ## 2026-10-20 자동복귀 RC 바퀴 연동 활성화
 
 - 수동 바퀴 회전 확인 후 사용자가 자동주행에서는 바퀴가 돌지 않는다고 보고했다. DefaultGame.ini의 bPublishAutomaticReturn=False가 원인이 되는 송신 분기를 확인했다. 기존 브릿지는 이 값이 True이고 탐사 제어 중일 때 GetAutomaticVehicleControlInput()을 송신한다. False일 때 자동 제어의 수동 입력은 0이다.
 - 최신 요청에 따라 기준 프로젝트의 bPublishAutomaticReturn=True로 영구 변경했다. bPublishVehicleInput=True, bReceiveVehicleCommands=False, 브로커 10.95.86.138:1883 및 기존 시험 토픽은 유지한다. 이전 자동복귀 송신 기본값 False 기록을 대체한다.
-- 현재 열린 에디터에는 Play를 중지한 뒤 사용자가 Unreal Cmd에서 `py "C:/Users/user/Documents/d-mix/tools/rc_session_start.py"`를 실행하면 같은 설정이 적용된다. 기존 스크립트를 그대로 사용하며 C++ 재빌드가 필요 없다. 다음 에디터 시작부터는 저장된 설정을 읽는다.
+- 현재 열린 에디터에는 Play를 중지한 뒤 사용자가 Unreal Cmd에서 `py "C:/Users/user/Documents/d-mix/unreal/tools/rc_session_start.py"`를 실행하면 같은 설정이 적용된다. 기존 스크립트를 그대로 사용하며 C++ 재빌드가 필요 없다. 다음 에디터 시작부터는 저장된 설정을 읽는다.
 - 범위는 가상 자동복귀의 수평 전진·회전을 바닥에서 띄운 RC카 바퀴로 재현하는 것이다. 실제 RC카의 위치 측정·경로 복귀를 구현한 것은 아니다. 수직 이동은 실물 모터에 연결하지 않는다. 기존 포커스 상실·정지·도착·입력 유효시간·Pi 통신 단절 정지를 유지한다.
 - 설정 파일/기존 실행 스크립트/자동복귀 출력 분기를 정적으로 확인했다. 사용자가 현재 에디터에 세션 설정을 적용한 뒤 자동복귀 시험에서 실제 바퀴가 돈다고 확인했다. 수동 조작과 자동복귀의 고정 RC카 바퀴 연동 모두 사용자 확인 완료이며, 실제 지상 경로 복귀 검증과는 구분한다. Pi 수신기는 앞선 작업에서 20% 상한의 백그라운드 세션으로 실행했다. GitHub 미게시.
 
@@ -232,7 +232,7 @@
 
 - 사용자가 매번 세션 시작 명령을 입력하지 않도록 요청했다. 기준 DefaultGame.ini의 bPublishVehicleInput=True, BrokerHost=10.95.86.138, BrokerPort=1883, CmdTopic=codex/ue-bench/20261019/cmd로 영구 설정했다. 과거 기본 송신 False 기록은 이 요청으로 대체된다. 수신과 자동복귀 송신 기본값은 False로 유지하며 A/B 수직 이동은 가상 환경에만 적용된다.
 - 에디터 재시작 후 Play/VR Preview의 Game/PIE 월드 초기화에서 자동 연결한다. 레벨 편집 상태에서는 연결하지 않는다. 기존 2초 재접속 설정을 유지한다. 별도 rc_session_start.py 실행 없이 수동 조작 송신을 시작하지만 Pi 수신 프로그램은 별도로 실행 중이어야 한다.
-- 현재 에디터 세션만 끄려면 Unreal Cmd에서 `py "C:/Users/user/Documents/d-mix/tools/rc_session_stop.py"` 실행. 실행 중인 Play도 종료 요청한다. 영구 설정을 저장하지 않으므로 다음 에디터 재시작 시 자동 활성화된다. 계속 끄려면 DefaultGame.ini의 bPublishVehicleInput=False로 되돌린다. 이전 rc_session_start.py는 자동복귀 송신도 활성화하는 별도 세션 기능임에 유의한다.
+- 현재 에디터 세션만 끄려면 Unreal Cmd에서 `py "C:/Users/user/Documents/d-mix/unreal/tools/rc_session_stop.py"` 실행. 실행 중인 Play도 종료 요청한다. 영구 설정을 저장하지 않으므로 다음 에디터 재시작 시 자동 활성화된다. 계속 끄려면 DefaultGame.ini의 bPublishVehicleInput=False로 되돌린다. 이전 rc_session_start.py는 자동복귀 송신도 활성화하는 별도 세션 기능임에 유의한다.
 - 설정 값·토픽 일치·초기화/재접속 코드 정적 확인 완료. 설정 변경이므로 C++ 재빌드는 필요 없다. AI가 실제 브로커 접속·Play·Pi/모터 실행을 검증하지 않았다. AGENTS/README/인계/상태/카탈로그 갱신, GitHub 미게시.
 
 ## 2026-10-20 Quest 오른손 A/B 상하 이동
@@ -244,14 +244,14 @@
 
 ## 2026-10-20 대시보드 백그라운드 실행
 
-- `dashboard/start.cmd`와 `start.ps1`은 대시보드/영상 서버를 숨김 프로세스로 시작하고 준비 확인 후 반환한다. 실행 완료 후 PowerShell 창을 닫아도 서버는 유지된다. 종료는 `start.cmd -Stop` 또는 `powershell -ExecutionPolicy Bypass -File "C:\Users\user\Documents\d-mix\dashboard\start.ps1" -Stop`이다. 구형 전경 서버는 기존 창에서 종료한 뒤 새 실행기를 사용한다. 재부팅 자동 시작은 추가하지 않았다.
+- `raspberry-pi/dashboard/start.cmd`와 `start.ps1`은 대시보드/영상 서버를 숨김 프로세스로 시작하고 준비 확인 후 반환한다. 실행 완료 후 PowerShell 창을 닫아도 서버는 유지된다. 종료는 `start.cmd -Stop` 또는 `powershell -ExecutionPolicy Bypass -File "C:\Users\user\Documents\d-mix\raspberry-pi\dashboard\start.ps1" -Stop`이다. 구형 전경 서버는 기존 창에서 종료한 뒤 새 실행기를 사용한다. 재부팅 자동 시작은 추가하지 않았다.
 - 실행 정보는 Git 제외된 `.runtime/background-processes.json`에 기록하며 PID·시작 시각·실행 파일을 대조해 종료한다. Python 가상환경의 실제 자식 인터프리터 PID도 bridge.json으로 전달해 추적한다. 같은 설정의 중복 실행은 재사용하고, 다른 설정은 먼저 종료하도록 안내한다. 이미 실행 중인 외부 영상 서버를 재사용하면 종료 대상에 포함하지 않는다. 기본 브로커는 사용자 지정 10.95.86.138로 맞췄다.
 - 검증: Windows PowerShell 실행기 종료 후 별도 포트5051 HTTP 200, 중복 실행 시 PID 유지, -Stop 후 포트 반환 확인. 번들 Python과 -NoMqtt를 사용했으며 기존 영상 서버를 재사용했다. 기존 서버 단위검사 5개 통과. 사용자 설치 Python 가상환경/새 영상 서버의 전체 실행은 별도 미검증이다. 검사 종료 후 기존 bridge.json 복원. 실제 MQTT/Pi 접속·모터 명령 없음.
-- README/인계/상태/파일 카탈로그 갱신. 기존 파일만 로컬 수정, GitHub 미게시. 서버 재시작 뒤 Unreal 운영 상태/버튼 연결에는 `py "C:/Users/user/Documents/d-mix/tools/connect_local_dashboard.py"` 재실행이 필요하다.
+- README/인계/상태/파일 카탈로그 갱신. 기존 파일만 로컬 수정, GitHub 미게시. 서버 재시작 뒤 Unreal 운영 상태/버튼 연결에는 `py "C:/Users/user/Documents/d-mix/unreal/tools/connect_local_dashboard.py"` 재실행이 필요하다.
 
 ## 2026-10-20 현재 MQTT 브로커 주소 변경
 
-- 사용자가 현재 브로커 주소를 `10.95.86.138`로 확인했다. 기준 프로젝트 `MqttVehicle 5.7/Config/DefaultGame.ini`의 BrokerHost와 `tools/rc_session_start.py`의 세션 주소를 함께 변경했다. 아래 과거 기록의 192.168.0.8은 이전 주소다.
+- 사용자가 현재 브로커 주소를 `10.95.86.138`로 확인했다. 기준 프로젝트 `unreal/MqttVehicle/Config/DefaultGame.ini`의 BrokerHost와 `unreal/tools/rc_session_start.py`의 세션 주소를 함께 변경했다. 아래 과거 기록의 192.168.0.8은 이전 주소다.
 - MQTT 송수신 기본값 False, 포트 1883 및 기존 토픽은 유지했다. 시작 스크립트는 Play 중지 상태에서 사용자가 실행하면 해당 에디터 세션의 송신을 활성화한다. 이미 열린 에디터에도 스크립트 실행으로 새 주소가 적용된다.
 - 파일 값 확인 완료. 실제 브로커 접속·Play·Pi/모터 실행은 수행하지 않았고 GitHub 미게시다.
 
@@ -278,7 +278,7 @@
 
 ## 2026-10-20 Pixel Streaming 자동 영상 연결 (최신)
 
-- 수동 창 선택 화면 공유를 Epic UE5.7 Pixel Streaming 2로 교체했다. dashboard/start.cmd가 로컬 서버와 영상 연결 서버를 시작한다. Unreal 에디터 Play 시작 시 자동 송출하며 대시보드는 자동 구독·재연결한다.
+- 수동 창 선택 화면 공유를 Epic UE5.7 Pixel Streaming 2로 교체했다. raspberry-pi/dashboard/start.cmd가 로컬 서버와 영상 연결 서버를 시작한다. Unreal 에디터 Play 시작 시 자동 송출하며 대시보드는 자동 구독·재연결한다.
 - 최초 실행은 Python 3와 Node.js 22 LTS, 인터넷이 필요하다. setup_pixel.ps1이 고정 버전 의존성 설치와 플레이어 번들을 생성한다. 5050/8888/8889는 loopback 전용이다. 원격 키보드·마우스·게임패드 입력은 끈다.
 - 프로젝트 DefaultGame.ini의 PixelStreaming2 설정과 플러그인을 활성화했다. EditorStartOnLaunch=False여서 편집 화면은 송출하지 않고 Play 때 시작한다. 독립 실행용 AutoStartStream=True도 지정했다. 패키징 앱 및 VR 헤드셋 미러링은 미검증이다.
 - 화면 없는 Unreal Play → Edge WebRTC 실제 영상 디코딩(1014×552)을 확인했다. 서버 검사 5개 통과, 설치/번들 생성 통과. 검증 중 Unreal MQTT 송수신 False; RC 모터 제어 없음.
@@ -300,19 +300,19 @@
 
 ## 2026-10-20 대시보드 영상 영역 확대
 
-- dashboard/index.html의1200px 최대 폭을 제거하고 좌우 여백24px로 전체 너비를 사용한다. 오른쪽 상태 패널은320px, 나머지는 영상 영역에 배정한다.
+- raspberry-pi/dashboard/index.html의1200px 최대 폭을 제거하고 좌우 여백24px로 전체 너비를 사용한다. 오른쪽 상태 패널은320px, 나머지는 영상 영역에 배정한다.
 - 영상 자리16:9 비율·최소 높이420px,900px 이하 화면에서는 단일 열·최소 높이220px로 전환한다. 영상 스트리밍은 여전히 미연결이다. 로컬 수정이며 GitHub 미업로드.
 
 
 ## 2026-10-20 로컬 해저 탐사 대시보드
 
-- 새 dashboard/에 로컬 서버·화면·Windows 실행기·검사를 구현했다. http://127.0.0.1:5050 에서 실행하며 외부 CDN 없이 표시한다. start.cmd 첫 실행은 Python 가상환경과 paho-mqtt 설치가 필요하다.
+- 새 raspberry-pi/dashboard/에 로컬 서버·화면·Windows 실행기·검사를 구현했다. http://127.0.0.1:5050 에서 실행하며 외부 CDN 없이 표시한다. start.cmd 첫 실행은 Python 가상환경과 paho-mqtt 설치가 필요하다.
 - MQTT 브로커와 실제 Pi state 토픽을 구독만 한다. 신선한 수신기 출력과 브로커 연결을 구분하고1.5초 무응답은 값을 숨긴다. 서버는 차량 명령을 MQTT로 발행하지 않는다.
-- tools/connect_local_dashboard.py로 에디터를 연결하면 Play·가상 속도·복귀 상태/이벤트를 표시한다. 수동 전환·자동복귀·정지는 기존 Unreal 함수를 호출한다. 2초 만료/응답 표시 및 loopback·Origin·bridge token 검사를 사용한다. 기본 MQTT 송수신은 변경하지 않는다.
+- unreal/tools/connect_local_dashboard.py로 에디터를 연결하면 Play·가상 속도·복귀 상태/이벤트를 표시한다. 수동 전환·자동복귀·정지는 기존 Unreal 함수를 호출한다. 2초 만료/응답 표시 및 loopback·Origin·bridge token 검사를 사용한다. 기본 MQTT 송수신은 변경하지 않는다.
 - 검증: 서버 검사5개 통과, 실제 Pi MQTT 구독 및0/0 텔레메트리 수신, 브라우저 화면/미연결 버튼 비활성화 확인. 별도 화면 없는 실제 Play에서 MQTT를 끄고 운영3개 함수 응답 및 속도0.0/복귀 상세 상태 전달 확인. 최초 get_pawn API 오류는 GameplayStatics.get_player_pawn으로 수정했다.
 - 사용자가 연결 스크립트를 실행한 뒤 에디터를 종료한 로그를 확인했다. 다음 에디터 실행 시 다시 연결 스크립트를 실행해야 한다. 서버 재시작도 토큰 변경으로 재연결이 필요하다. 실제 차량 동작 검사는 하지 않았다.
 - 영상은 미연결 안내만 표시한다. 실제 영상/센서RPM·배터리/패키징 앱/VR 연결 감지는 아직 미구현이다. 브라우저로 포커스 이동 시 기존 Unreal 정지 정책을 유지한다. 독립 하드웨어 비상정지 기능이 아니다.
-- dashboard/.runtime 토큰·.venv는 Git 업로드 및 파일 카탈로그 제외. 새 파일과 관련 문서의 GitHub 업로드 사용자 승인 완료.
+- raspberry-pi/dashboard/.runtime 토큰·.venv는 Git 업로드 및 파일 카탈로그 제외. 새 파일과 관련 문서의 GitHub 업로드 사용자 승인 완료.
 
 
 ## 2026-10-20 H 복귀 준비 대기 제거 (빌드 완료)
@@ -331,13 +331,13 @@
 ## 2026-10-20 자동복귀 송신 미활성 원인 수정
 
 - 사용자 에디터 로그 00:47:46/50(KST)은 이전 `.upload-tools/arm_rc_bench.py` 실행을 기록했다. 해당 임시 파일은 publish_vehicle_input만 켜고 publish_automatic_return을 켜지 않아 자동복귀 입력이 제외됐다. Pi 수신기는 실행 중이며 수동 명령 수신/중립/timeout 로그를 확인했다.
-- 기존 임시 진입점을 `tools/rc_session_start.py` 위임으로 교체했다. 이전 복사 명령도 이제 자동복귀 송신 설정을 함께 켠다. 임시 파일은 업로드 대상이 아니다. 새/옛 진입점 각각 자동송신 활성화·Play 중 실행 차단·종료 해제 모의 검사 통과, Pi 오프라인18개 재통과.
+- 기존 임시 진입점을 `unreal/tools/rc_session_start.py` 위임으로 교체했다. 이전 복사 명령도 이제 자동복귀 송신 설정을 함께 켠다. 임시 파일은 업로드 대상이 아니다. 새/옛 진입점 각각 자동송신 활성화·Play 중 실행 차단·종료 해제 모의 검사 통과, Pi 오프라인18개 재통과.
 - 사용자에게 Play 정지 후 연결 스크립트 재실행을 요청했다. 실제 Unreal→Pi 자동복귀 출력과 바퀴 동작 확인은 아직 대기 중이다. 별도 모터 명령 발행 없음. 이번 문서 변경은 GitHub 미업로드.
 
 
 ## 2026-10-20 자동복귀 MQTT 동작 동기화
 
-- 사용자 요청으로 수중 자동복귀의 수평 전진과 제자리 회전을 RC 명령에 연결했다. 새 `bPublishAutomaticReturn`은 기본 False이며 `tools/rc_session_start.py`가 메모리에서만 활성화하고 종료 스크립트가 해제한다. 수동 getter는 기존 동작을 유지한다.
+- 사용자 요청으로 수중 자동복귀의 수평 전진과 제자리 회전을 RC 명령에 연결했다. 새 `bPublishAutomaticReturn`은 기본 False이며 `unreal/tools/rc_session_start.py`가 메모리에서만 활성화하고 종료 스크립트가 해제한다. 수동 getter는 기존 동작을 유지한다.
 - Pawn은 실제 가상 이동의 수평 속도/복귀 기준 속도를 th(0..1), 적용한 yaw 변화/회전 속도를 st(-1..1)로 제공한다. 최초 경로 정렬·회전 및 도착 180도 회전 방향이 포함된다. 수직 이동 단독은 0이며 지형 충돌 시 전진0, 대기·중단·도착 종료 시0이다. 갱신 후0.2초가 지난 자동 명령은0이다.
 - Bridge는 명시적으로 활성화된 자동복귀만 선택하며 기존 포커스·일시정지·통신 실패 정지를 유지한다. Pi 기존 전진0.2·제자리회전0.12 상한/단절정지를 사용한다. 이는 가상 동작을 따라 보내는 명령이며 실물 180도 회전각·거리·출발점 도착을 보장하지 않는다. 실제 공간 지도와 센서 피드백은 미구현이다.
 - C++ Editor 빌드 성공. Pi 오프라인18개 통과. Unreal Control 자동화3개 통과(복귀 전진 출력·좌우 회전 방향·대기/중단 정지 검사 포함). 실제 Pi 접속·배포·모터 송신은 이번 작업에서 하지 않았다. 고정 차체 통합 검증은 남아 있다. GitHub 업로드 사용자 승인 완료(2026-10-20).
@@ -345,9 +345,9 @@
 
 ## 2026-10-20 RC 연결 세션 간소화와 정지 검사
 
-- `tools/rc_session_start.py`: Play가 멈춘 상태에서 실행. 메모리 기본 객체만 송신 활성화하며 여러 Play에 유지한다. 이전 임시 5분 콜백을 제거한다. 설정 파일의 송수신 False는 유지하고 에디터 재시작 시 다시 명시적으로 켜야 한다. Pi를 시작하거나 연결 성공을 보증하지 않는다.
-- `tools/rc_session_stop.py`: 이후 Play의 송수신을 끄고 진행 중인 Play는 종료 요청한다. 기존 C++ Deinitialize의 0 명령과 수신기 watchdog이 정지를 담당한다. 종료 요청만으로 실물 정지 확인이라고 기록하지 않는다.
-- `materials/pi/run_rc_session.sh`: Pi에서 같은 폴더의 수신기를 포그라운드로 실행. 기본 `--dry-run`, 고정 차체 실물은 명시적 `--motors`. 10분 제한 없이 Ctrl+C로 종료하며 부팅 자동실행은 하지 않는다. flock은 이 실행기를 통한 중복만 막으므로 이전 임시 수신기는 먼저 종료해야 한다. Pi 배포/실행은 아직 하지 않았다.
+- `unreal/tools/rc_session_start.py`: Play가 멈춘 상태에서 실행. 메모리 기본 객체만 송신 활성화하며 여러 Play에 유지한다. 이전 임시 5분 콜백을 제거한다. 설정 파일의 송수신 False는 유지하고 에디터 재시작 시 다시 명시적으로 켜야 한다. Pi를 시작하거나 연결 성공을 보증하지 않는다.
+- `unreal/tools/rc_session_stop.py`: 이후 Play의 송수신을 끄고 진행 중인 Play는 종료 요청한다. 기존 C++ Deinitialize의 0 명령과 수신기 watchdog이 정지를 담당한다. 종료 요청만으로 실물 정지 확인이라고 기록하지 않는다.
+- `raspberry-pi/rover/run_rc_session.sh`: Pi에서 같은 폴더의 수신기를 포그라운드로 실행. 기본 `--dry-run`, 고정 차체 실물은 명시적 `--motors`. 10분 제한 없이 Ctrl+C로 종료하며 부팅 자동실행은 하지 않는다. flock은 이 실행기를 통한 중복만 막으므로 이전 임시 수신기는 먼저 종료해야 한다. Pi 배포/실행은 아직 하지 않았다.
 - 수신기는 SIGHUP도 정상 종료로 처리하도록 보완했다. 최대 전후진 0.2·제자리 회전 0.12 유지. 모터 없는 기존 검사18개 및 세션 스크립트 모의 검사(시작/Play 중 시작 차단/종료/반복 종료) 통과. 실제 에디터 실행·Pi 셸 실행·SIGHUP 실물 정지는 미검증.
 - 정지 코드 검토: 키 해제는 0 명령, 포커스 이탈은 StopVehicleInput 후 0, Play 종료는 최종 0 송신 시도, 명령 단절은 Pi 0.3초 watchdog + 최대 약 0.05초 제어주기 지연. MQTT QoS0이므로 최종 패킷 수신을 보장하지 않는다. 네 항목의 이번 실제 Unreal→바퀴 통합 검사는 사용자 실행 대기다.
 - 사용: Pi에서 `sh run_rc_session.sh --motors`(고정 차체 승인 범위만). Unreal Cmd 콘솔에서 `py "C:/Users/HEATH/Desktop/d_mix/STUDENT_HANDOFF_MQTT_2026-09-27/tools/rc_session_start.py"`. 종료는 같은 경로의 `rc_session_stop.py` 실행 후 Pi 터미널 Ctrl+C. Python 입력 모드에서는 `py` 대신 `exec(open("절대경로", encoding="utf-8").read())`를 사용한다.
@@ -390,12 +390,12 @@
 
 ## RC카 최대값 0.4 적용
 
-- 사용자 요청으로 로컬 materials/pi/rover_drive.py 및 Pi /home/pi/rover_drive.py의 22행 MAX_SPEED를 0.4로 변경했다. 기본값/허용 상한 모두 0.4. 오류 안내는 상수를 참조한다. 검사 15개 및 Pi 문법 검사 통과.
+- 사용자 요청으로 로컬 raspberry-pi/rover/rover_drive.py 및 Pi /home/pi/rover_drive.py의 22행 MAX_SPEED를 0.4로 변경했다. 기본값/허용 상한 모두 0.4. 오류 안내는 상수를 참조한다. 검사 15개 및 Pi 문법 검사 통과.
 - 실제 프로세스 조회에서 기존 --max-speed 0.25를 확인한 뒤 중립을 검사하고 해당 수신기를 정상 종료했다. --max-speed 0.4로 600초 한정 재시작했으며 로그 max_speed=0.40과 초기 0 출력을 확인했다. 별도 회전 명령은 보내지 않았다. GitHub 업로드 전.
 
 ## RC카 최대값 0.3 변경
 
-- 사용자 요청으로 materials/pi/rover_drive.py의 MAX_SPEED를 0.6에서 0.3으로 변경했다. 기본값과 허용 상한 모두 0.3이며 이를 초과하는 설정은 거부한다. 검사 15개 통과. Pi /home/pi/rover_drive.py도 반영하고 문법 확인 완료. 모터 구동/재시작은 하지 않았다. 기존 시험 실행 인수 0.25는 유지되며 Unreal MPH 설정과 별개다. GitHub 업로드 전이다.
+- 사용자 요청으로 raspberry-pi/rover/rover_drive.py의 MAX_SPEED를 0.6에서 0.3으로 변경했다. 기본값과 허용 상한 모두 0.3이며 이를 초과하는 설정은 거부한다. 검사 15개 통과. Pi /home/pi/rover_drive.py도 반영하고 문법 확인 완료. 모터 구동/재시작은 하지 않았다. 기존 시험 실행 인수 0.25는 유지되며 Unreal MPH 설정과 별개다. GitHub 업로드 전이다.
 
 ## 2026-10-19 실제 바퀴 배치 확정·수신기 반영
 
@@ -407,7 +407,7 @@
 ## 2026-10-19 오른쪽 모터 방향 보정
 
 - Unreal W 입력으로 바퀴가 회전했지만 사용자 관찰상 오른쪽은 후진 방향이었다. 시험 수신기를 정지했다.
-- materials/pi/rover_drive.py에 --invert-right 옵션을 추가했다. MotorOutput에서 오른쪽 두 모터 GPIO 부호만 반전하고 논리 th/st 및 l/r 상태값은 유지한다. 기본은 반전 없음이며 이 차체 시험에 옵션을 지정한다. 전후진·좌우 출력·0 정지 회귀를 포함한 오프라인 검사 14개 통과.
+- raspberry-pi/rover/rover_drive.py에 --invert-right 옵션을 추가했다. MotorOutput에서 오른쪽 두 모터 GPIO 부호만 반전하고 논리 th/st 및 l/r 상태값은 유지한다. 기본은 반전 없음이며 이 차체 시험에 옵션을 지정한다. 전후진·좌우 출력·0 정지 회귀를 포함한 오프라인 검사 14개 통과.
 - Pi 임시 수신기에 수정본을 반영하고 --invert-right, 30%·2초 한정 시험 후 0 출력/timeout/정상 종료를 확인했다. 양쪽 실제 전진 방향 일치 여부는 사용자 확인 대기. 상시 수신기는 현재 종료 상태다. 변경 소스/검사는 아직 GitHub 업로드 전이다.
 
 ## 2026-10-19 23:33 재시험 수신기 만료 확인
@@ -448,7 +448,7 @@
 
 ## 2026-10-19 Tailor 표시 오류 수정 — 실제 Play 렌더 확인
 
-- 초기 물고기 추가본은 액터/참조 Bounds만 검사해 FBX 애니메이션 축척 오류를 놓쳤다. 사용자가 보이지 않는다고 보고했고, 실제 Play 근접 렌더에서 재현했다. 원본 객체 변환 키와 단위를 정리한 파생 FBX로 수정했다. `Prepared/TailorNormalized.fbx`와 `MeshV2/`를 사용하며 원본은 그대로 보존한다. `tools/build_tailor_fish.py`의 Blender `--prepare-fbx` 모드로 재생성할 수 있다(Blender 4.5 검증).
+- 초기 물고기 추가본은 액터/참조 Bounds만 검사해 FBX 애니메이션 축척 오류를 놓쳤다. 사용자가 보이지 않는다고 보고했고, 실제 Play 근접 렌더에서 재현했다. 원본 객체 변환 키와 단위를 정리한 파생 FBX로 수정했다. `Prepared/TailorNormalized.fbx`와 `MeshV2/`를 사용하며 원본은 그대로 보존한다. `unreal/tools/build_tailor_fish.py`의 Blender `--prepare-fbx` 모드로 재생성할 수 있다(Blender 4.5 검증).
 - 메시/뼈대 객체 회전·축척을 적용하고 중복 객체 변환 애니메이션 키를 제거, cm 단위로 내보내 Swim_01 포즈를 유지했다. SkeletalMesh 재질 사용 플래그도 저장했다. 물고기 수/크기/경로와 MQTT 차단은 유지한다.
 - 사용자가 수정 명령 실행 후 종료했다. 로그 2026-10-19 18:13:18 KST에 TAILOR_BUILD_OK 확인. 이후 저장 맵을 새 오프스크린 Play로 재로드해 MeshV2 24개체, 첫 개체 머리-꼬리 약 30.07cm(전체 몸길이 약 45cm), 검사 구간 약 310.68cm 이동을 확인했다. 시간차 렌더 2장을 직접 확인했고 물고기 표시와 위치 변화가 보였다. 진단 Play/프로세스 정상 종료. 전 개체 지형 관통·학교 PC VR 프레임·장시간 시험은 미검증이다.
 - 초기 위치 안내 임시 스크립트는 존재하지 않는 editor_set_camera_info API로 실패했다. 선택 액터에 CAMERA ALIGN 명령을 쓰도록 수정했다. 사용자는 이제 콘솔 재실행 없이 저장 프로젝트를 열 수 있다. 임시 진단 파일/렌더는 .upload-tools에만 보관한다.
@@ -456,7 +456,7 @@
 
 ## 2026-10-19 Tailor 물고기 무리 추가
 
-- 사용자 제공 CGTrader Wyreframe Tailor 원본(FBX 4개·PBR PNG 5개)을 `materials/selected_free_assets/Wyreframe/Tailor/`에 보존했다. `tools/build_tailor_fish.py`가 애니메이션 FBX와 BaseColor/Normal/Roughness/Metallic을 임포트하고 기존 맵에 24마리(4무리×6마리)를 추가한다. 원본 Height는 보존만 하며 적용하지 않는다.
+- 사용자 제공 CGTrader Wyreframe Tailor 원본(FBX 4개·PBR PNG 5개)을 `assets/selected_free_assets/Wyreframe/Tailor/`에 보존했다. `unreal/tools/build_tailor_fish.py`가 애니메이션 FBX와 BaseColor/Normal/Roughness/Metallic을 임포트하고 기존 맵에 24마리(4무리×6마리)를 추가한다. 원본 Height는 보존만 하며 적용하지 않는다.
 - 길이 45~60cm, 4개 높이 구간(약 7.5~17.5m), 반경 3.8~4.9m·60초 순환. 원본 `Swim_01`을 반복하고 Level Sequence가 위치·방향을 갱신한다. 원본 앞방향은 -X. 충돌/그림자/고래 발견 태그 없이 관찰용으로 배치한다. 스크립트 재실행은 TailorFish_v1 소유 액터만 교체한다.
 - 현재 LOD0 메시를 사용한다. 제공 LODGroup의 거리별 LOD 연결과 학교 노트북 VR 성능 측정은 미완료다. 경로는 고정 순환이며 장애물 회피·군집 AI가 아니다.
 - 검증: Blender에서 뼈대와 Swim_01 확인. UE 5.7.4 화면 없는 에디터 제작/저장 성공, 별도 프로세스에서 24개체·24개 시퀀스 바인딩·각 축 121키·60초 반복·유영 설정·NoCollision 확인. 초기 commandlet Slate 오류 및 NullRHI 오류는 RenderOffscreen 실행으로 회피하고 Python 속성명을 수정했다. Play 실제 유영, 지형 관통/재질 외형/VR 프레임은 미검증이다. C++ 변경·빌드 없음. MQTT False 유지, Pi·모터 미접속.
@@ -473,7 +473,7 @@
 | 사용자 보고로 확인 | Quest 3 512GB, Link/Air Link 활성화·PC 검색, Meta 웹 캐스팅에서 앱 목록 표시 |
 | 장비 미확인 | 학교 노트북 현재 사용 불가. PC 페어링·VR Preview·VR 성능·네트워크 안정성 미검증. RC카는 집에 있으며 현재 Pi 상태 미확인 |
 | VR 소스 | 기존 프로젝트 재사용 예정. 이번 검색에서 전용 XR 연동을 찾지 못했고 .uproject에 OpenXR 명시 항목 없음. HMD/선체 회전 분리·Quest 입력·VR UI 적용 필요. 엔진 기본 활성 상태는 별도 확인 |
-| 대시보드 | 기존 digital_twin/dashboard.html은 구급차 UI·car/control 발행. 전시용 UI·VR 미러 창 공유·veh/* 상태 표시는 미구현 |
+| 대시보드 | 기존 archive/exhibit_v1/dashboard.html은 구급차 UI·car/control 발행. 전시용 UI·VR 미러 창 공유·veh/* 상태 표시는 미구현 |
 | MQTT 정적 확인 | 송수신 False. GetVehicleControlInput은 수중 모드/자동 제어/입력 해제 대기에서 0. 수평 수동 입력 변환 후 loopback dry-run 필요 |
 | 이번 검증 | 문서·프로젝트 설정·출력 조건·대시보드·수신기 CLI 읽기만 수행. 추가 빌드·테스트·VR·브로커·Pi·모터 실행 없음 |
 
@@ -485,7 +485,7 @@
 
 사용자가 **실제 RC카 주행 금지**를 명시했다. Pi에 접속하거나 차량 프로그램·서비스를 실행하지 않고 모터 제어 명령을 보내지 않는다. MQTT 송수신 기본값은 모두 False이며 브릿지는 이 경우 연결을 시작하지 않는다. 실차 작업은 사용자의 명시적 재개 지시 전까지 보류한다.
 
-기준은 `MqttVehicle 5.7/MqttVehicle.uproject`, 시작 맵은 `/Game/Underwater/Maps/L_UnderwaterExploration`, GameMode는 `BP_UnderwaterGameMode`, 기본 Pawn은 `BP_ExplorationRover`이다. 기존 프로젝트·Rescue 맵은 참고 사본으로 보존한다.
+기준은 `unreal/MqttVehicle/MqttVehicle.uproject`, 시작 맵은 `/Game/Underwater/Maps/L_UnderwaterExploration`, GameMode는 `BP_UnderwaterGameMode`, 기본 Pawn은 `BP_ExplorationRover`이다. 기존 프로젝트·Rescue 맵은 참고 사본으로 보존한다.
 
 ### 2026-10-18 출발점 3D A* 자동복귀
 
@@ -529,7 +529,7 @@ Lanzaman의 고정 추진기 뒤에 3엽 날개를 양쪽에 추가했다. 원�
 | 위험 구역 | (-600,1800,300)cm, 14×10×6m 고정 TriggerBox, 1m 퇴장 여유, 선분 통과와 반복 방지 | 단위 테스트 통과. 해파리는 시각 장식이며 센서/추적 생물 아님 |
 | MQTT | veh/cmd {th,st}, 활성화 시 100ms·QoS0·retain false. 수중 모드/자동복귀/제자리 회전 출력 조회0 | 송수신 기본 False·브로커 접속 생략 유지. Pi 접속/모터 송신 없음. Unreal↔브로커 통합 시험 미실행 |
 | 응급 경보 | 브릿지의 경보 구독/파싱/발행 제거, 옛 Blueprint 심벌은 호환용 | 현재 해저 실행 경로에서 옛 Rescue Timeline 사용하지 않음 |
-| Pi 수신기 | `materials/pi/rover_drive.py`: 입력 검증·0.3초 워치독·재접속/종료 정지·기본 dry-run | 오프라인 단위 테스트 13개 통과. 실제 Pi 미배포·미실행, 실차 결과 없음 |
+| Pi 수신기 | `raspberry-pi/rover/rover_drive.py`: 입력 검증·0.3초 워치독·재접속/종료 정지·기본 dry-run | 오프라인 단위 테스트 13개 통과. 실제 Pi 미배포·미실행, 실차 결과 없음 |
 
 ## 검증 기록
 
@@ -578,13 +578,13 @@ Lanzaman의 고정 추진기 뒤에 3엽 날개를 양쪽에 추가했다. 원�
 
 ## 코드·에셋 위치
 
-- `MqttVehicle 5.7/Source/MqttVehicle/`: Pawn의 입력·외형·속도·카메라, Controller의 선택/관찰/복귀 연결, BridgeSubsystem의 MQTT 연결 관리.
+- `unreal/MqttVehicle/Source/MqttVehicle/`: Pawn의 입력·외형·속도·카메라, Controller의 선택/관찰/복귀 연결, BridgeSubsystem의 MQTT 연결 관리.
 - 같은 모듈 `Camera/`: 런타임 조종석·반대 시점 SceneCapture·좌하단 512×288 무자막 위젯. `Selected/Materials/M_CameraFeed`가 영상 표시 재질이다.
 - 같은 모듈 `Observation/`: 관찰 판정·단축키 전용 UI와 `WhaleSwimmingActor.h/.cpp`의 원형 유영.
 - 같은 모듈 `Exploration/`: 수중 3D A* 경로 계산·충돌/위험 회피·재탐색·도착 회전, 일반 차량용 기록 경로 호환 코드. `Tests/`의 최신 기록은 Unreal 자동화 12개 성공이다.
 - `Content/Underwater/Selected/`: 선택 탐사선·해초·바위·혹등고래와 변환 재질/텍스처. `Content/Vefects/Bubbles_VFX/`: Fab 원본 Niagara 패키지.
-- `materials/selected_free_assets/`: 원본 GLB·FBX·텍스처·원본 압축 파일, `Converted/`에는 Blender 정규화본과 재질 매핑.
-- `tools/prepare_selected_assets.py`, `build_selected_underwater.py`: 변환·임포트·배치. `animate_underwater_scene.py`: 이전 고래 절차 재질·현재 해파리 시각 요소 제작.
+- `assets/selected_free_assets/`: 원본 GLB·FBX·텍스처·원본 압축 파일, `Converted/`에는 Blender 정규화본과 재질 매핑.
+- `unreal/tools/prepare_selected_assets.py`, `build_selected_underwater.py`: 변환·임포트·배치. `animate_underwater_scene.py`: 이전 고래 절차 재질·현재 해파리 시각 요소 제작.
 - 출처·라이선스는 `docs/ASSET_CREDITS.md`, 파일별 역할·크기·해시는 `docs/FILE_GUIDE.md`, `docs/FILE_MANIFEST.json`.
 
 ## 수중 이동 범위

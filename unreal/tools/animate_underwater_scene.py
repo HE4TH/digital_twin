@@ -8,7 +8,7 @@ from pathlib import Path
 import math
 import unreal as ue
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BASE = '/Game/Underwater'
 LEVEL = BASE + '/Maps/L_UnderwaterExploration'
 MAT = ue.MaterialEditingLibrary

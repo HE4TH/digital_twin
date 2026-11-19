@@ -14,7 +14,7 @@ import runpy
 import sys
 import unreal as ue
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT/'materials/selected_free_assets'
 BASE = '/Game/Underwater/Selected'
 MAP = '/Game/Underwater/Maps/L_UnderwaterExploration'
@@ -25,8 +25,8 @@ TOOLS = ue.AssetToolsHelpers.get_asset_tools()
 ACTORS = ue.get_editor_subsystem(ue.EditorActorSubsystem)
 LEVELS = ue.get_editor_subsystem(ue.LevelEditorSubsystem)
 MAT = ue.MaterialEditingLibrary
-old = runpy.run_path(str(ROOT/'tools/build_underwater_scene.py'))
-rover = runpy.run_path(str(ROOT/'tools/build_exploration_rover.py'))
+old = runpy.run_path(str(ROOT/'unreal/tools/build_underwater_scene.py'))
+rover = runpy.run_path(str(ROOT/'unreal/tools/build_exploration_rover.py'))
 save = old['save']
 node = old['expression']
 

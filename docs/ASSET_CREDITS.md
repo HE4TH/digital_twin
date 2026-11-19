@@ -12,7 +12,7 @@ CC BY 4.0 에셋은 제작자·원본 링크·라이선스와 변경 사항을 �
 | 기포 Bubbles VFX | [Vefects / Fab](https://www.fab.com/listings/73d1c6cb-d6a5-4c3f-9381-94d4988ab3e6) | Fab Standard, Personal 무료 / Professional 유료 표시 | 사용자가 라이브러리에 취득, Unreal Fab에서 임포트; Area Translucent Niagara 시스템 24곳 배치 |
 | 고래 Humpback Whale (Swimming) | [Connlan_Immure](https://sketchfab.com/3d-models/humpback-whale-swimming-f4912be9163a4f45b2480df8ccb8b2c6) | CC BY 4.0 | 공식 FBX·텍스처 → 뼈대 메시, Idle_Swim 9.125초 반복 애니메이션, 길이 약 33m(2026-10-17 체험 후 사용자 요청으로 직전 16.5m의 2배 확대) |
 
-원본은 `materials/selected_free_assets/`, Unreal 변환본은 기준 프로젝트의
+원본은 `assets/selected_free_assets/`, Unreal 변환본은 기준 프로젝트의
 `Content/Underwater/Selected/`에서 관리한다. Vefects는 제공 패키지 경로
 `Content/Vefects/Bubbles_VFX/`를 유지한다. Blender 변환본은 `Converted/`에 있다.
 원본을 보존하고 메시 병합·크기·원점·좌표계·PBR 재질과 유리 표현을 Unreal에 맞춰 변환했다.
@@ -25,7 +25,7 @@ Fab 원본은 독립 에셋으로 재배포하지 않으며 프로젝트 협업�
 
 ## 2026-10-18 추진기 시각 효과
 
-Lanzaman 원본 메시를 수정하지 않고 추진기 뒤에 엔진 기본 Cube로 만든 3엽 회전 날개를 각각 추가한다. 위치는 원본 추진기 후면 경계에서 측정했다. 기포는 엔진 기본 Sphere와 프로젝트 생성 재질 `M_ThrusterBubble`을 사용하는 로컬 시각 효과다. 기존 Vefects 환경 기포와 별개이며 새 외부 다운로드/라이선스는 없다. `tools/build_thruster_effects.py`로 재질을 재생성한다. 원본 제작자/CC BY 표기는 유지한다.
+Lanzaman 원본 메시를 수정하지 않고 추진기 뒤에 엔진 기본 Cube로 만든 3엽 회전 날개를 각각 추가한다. 위치는 원본 추진기 후면 경계에서 측정했다. 기포는 엔진 기본 Sphere와 프로젝트 생성 재질 `M_ThrusterBubble`을 사용하는 로컬 시각 효과다. 기존 Vefects 환경 기포와 별개이며 새 외부 다운로드/라이선스는 없다. `unreal/tools/build_thruster_effects.py`로 재질을 재생성한다. 원본 제작자/CC BY 표기는 유지한다.
 
 
 ## Tailor 물고기 — 2026-10-19
